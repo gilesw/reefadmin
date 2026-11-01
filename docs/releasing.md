@@ -16,7 +16,7 @@ The initial release candidate is `reefadmin` 0.1.0. The core supports Axum 0.8 a
 Publishing and pushing the release tag are separate, explicit release actions. These steps work locally without a hosted CI or release service.
 
 1. Confirm the `reefadmin` name is available on crates.io and that the publishing account has permission. A missing index entry is only an availability indication; a dry run does not establish publishing rights or reserve a name. Authenticate with `cargo login` or the configured Cargo credential provider. Never commit a token.
-2. Set the changelog's release date. Change the README dependency examples to `reefadmin = "0.1"` and the compatibility alias to `{ package = "reefadmin", version = "0.1" }`. Keep the Loco example's path dependency for repository development.
+2. Set the changelog's release date. Change the README dependency examples to `reefadmin = "0.1"`. Keep the Loco example's path dependency for repository development.
 3. Review and commit all release files, including the example lockfile. Ensure `git status --porcelain` is empty. Run `mise run release:check` on that commit. Any subsequent source change requires the relevant checks again.
 4. Publish with `cargo publish --locked`. Do not use `--allow-dirty` or `--no-verify` for the real upload. If the command times out, check crates.io before retrying: an upload may have succeeded.
 5. Confirm version 0.1.0 is visible on crates.io and that docs.rs builds its API documentation. Tag the tested commit with `git tag -a v0.1.0 -m 'ReefAdmin 0.1.0'`, then push the release commit and tag to the established remote.

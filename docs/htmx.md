@@ -23,7 +23,7 @@ The same request-extension contract works with Axum middleware and a Loco initia
 
 ## Failures and customisation
 
-Responses to HTMX requests carry `X-ReefAdmin-Fragment: true`. The previous `X-Loco-Admin-Fragment` header is also emitted for older host scripts; the bundled script accepts either name. The browser only inserts HTML from responses with this marker. This prevents a redirected login page from replacing a table. Errors leave existing content intact and offer a reload button. Hosts may send `HX-Redirect` for an intentional full-page login redirect. Ordinary redirects still work for conventional forms.
+Responses to HTMX requests carry `X-ReefAdmin-Fragment: true`. The browser only inserts HTML from responses with this marker. This prevents a redirected login page from replacing a table. Errors leave existing content intact and offer a reload button. Hosts may send `HX-Redirect` for an intentional full-page login redirect. Ordinary redirects still work for conventional forms.
 
 Custom fragment handlers must set the marker, keep normal access checks and return escaped HTML. Reuse the default layout's `admin-request-error` and `admin-status` elements for request errors and status announcements. This marker is not an authentication mechanism.
 

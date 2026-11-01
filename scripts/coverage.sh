@@ -20,7 +20,6 @@ if [ "$mode" = html ]; then
 fi
 rm -rf "$report_dir"
 mkdir -p "$report_dir"
-export REEFADMIN_TEST_DATABASE_URL="${REEFADMIN_TEST_DATABASE_URL:-${LOCO_ADMIN_TEST_DATABASE_URL:-}}"
 : "${REEFADMIN_TEST_DATABASE_URL:?Set REEFADMIN_TEST_DATABASE_URL to a disposable PostgreSQL database}"
 cargo llvm-cov clean --workspace
 cargo llvm-cov --locked --lib --tests --no-report

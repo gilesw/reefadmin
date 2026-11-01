@@ -48,7 +48,7 @@ Investigate SeaORM's column-setting APIs as a replacement for fabricated JSON pl
 
 Unexpected request failures emit a `tracing` error event and return a generic HTTP 500 response. Database, template, observer and custom-action errors no longer appear in response bodies. Hosts configure their own tracing subscriber. Field validation keeps HTTP 422 and submitted values; explicit `ActionResult::Error` messages remain visible. An `AdminError::AccessDenied` still returns HTTP 403.
 
-Regression checks cover full pages and HTMX fragments, read/template failures, database constraints, custom actions and observer rollback. See the README for the response-behaviour migration.
+Regression checks cover full pages and HTMX fragments, read/template failures, database constraints, custom actions and observer rollback. See the README request errors section.
 
 Hosts can register a `ValidationErrorMapper` to classify add and change write errors, including observer errors, as HTTP 422 form messages. The mapper receives the entity name and returns public messages; unmapped errors stay generic. Regression checks cover add, change, rollback, form-level messages and the generic fallback.
 
@@ -328,7 +328,7 @@ Design references: [Loco initializer and application hooks](https://github.com/l
 
 ## ReefAdmin release preparation
 
-The crate and Rust import name are `reefadmin`. Cargo dependency aliases support consumers that keep `loco_admin` imports. The test database environment variable and fragment response header use ReefAdmin names, with the previous names retained as compatibility aliases. Repository metadata points to `gilesw/reefadmin`.
+The crate and Rust import name are `reefadmin`. The test database environment variable and fragment response header use ReefAdmin names. Repository metadata points to `gilesw/reefadmin`.
 
 The initial 0.1 release covers the implemented CRUD and policy contracts. Domain-operation adapters, audit hooks, rich editing and the optional partial-model simplification remain follow-up work. Hosts that require these features should retain application-owned routes and operations.
 

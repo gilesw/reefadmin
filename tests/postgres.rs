@@ -68,7 +68,6 @@ where
     Fut: Future<Output = ()> + Send + 'static,
 {
     let url = env::var("REEFADMIN_TEST_DATABASE_URL")
-        .or_else(|_| env::var("LOCO_ADMIN_TEST_DATABASE_URL"))
         .expect("set REEFADMIN_TEST_DATABASE_URL to a disposable PostgreSQL test database");
     assert!(url.starts_with("postgres://") || url.starts_with("postgresql://"));
     let control = Database::connect(&url).await.unwrap();

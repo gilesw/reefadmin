@@ -20,9 +20,9 @@
 
 - Require explicit `.export_fields(...)` for CSV export; validate field names and select only configured columns. Existing registrations default to no export.
 
-- Rename the package and Rust imports to `reefadmin`. Existing consumers can keep `loco_admin` imports with a Cargo dependency alias. Use `REEFADMIN_TEST_DATABASE_URL` and `X-ReefAdmin-Fragment`; retain the previous names as compatibility aliases. Update the repository URL and CI database names to ReefAdmin.
+- Name the package and Rust imports `reefadmin`. Use `REEFADMIN_TEST_DATABASE_URL` and `X-ReefAdmin-Fragment`. Point the repository URL and CI database names at ReefAdmin.
 
-- Log internal request failures through `tracing` and return a generic HTTP 500 response. Keep field-validation errors and explicit `ActionResult::Error` messages visible to users. See the README migration notes.
+- Log internal request failures through `tracing` and return a generic HTTP 500 response. Keep field-validation errors and explicit `ActionResult::Error` messages visible to users. See the README request errors section.
 
 - Require host-supplied actor context and an explicit policy; enforce operation and database row scopes across reads and writes.
 - Reject mixed unauthorized bulk selections before execution and pass the actor to custom actions. See [migration](docs/permissions.md#migration).

@@ -24,8 +24,7 @@
 
 // Only accept fragments produced by admin handlers, never a redirected login page.
 document.addEventListener('htmx:beforeSwap', (event) => {
-  const marker = event.detail.xhr.getResponseHeader('X-ReefAdmin-Fragment')
-    ?? event.detail.xhr.getResponseHeader('X-Loco-Admin-Fragment');
+  const marker = event.detail.xhr.getResponseHeader('X-ReefAdmin-Fragment');
   if (marker !== 'true') {
     event.detail.shouldSwap = false;
     const error = document.getElementById('admin-request-error');

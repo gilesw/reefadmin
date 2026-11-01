@@ -404,10 +404,6 @@ async fn render_list(
         response
             .headers_mut()
             .insert("x-reefadmin-fragment", HeaderValue::from_static("true"));
-        // Keep older host scripts working during migration.
-        response
-            .headers_mut()
-            .insert("x-loco-admin-fragment", HeaderValue::from_static("true"));
     }
     Ok(response)
 }
@@ -621,10 +617,6 @@ pub(super) async fn toggle(
         response
             .headers_mut()
             .insert("x-reefadmin-fragment", HeaderValue::from_static("true"));
-        // Keep older host scripts working during migration.
-        response
-            .headers_mut()
-            .insert("x-loco-admin-fragment", HeaderValue::from_static("true"));
         response
             .headers_mut()
             .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
@@ -673,10 +665,6 @@ pub(super) async fn autocomplete(
         response
             .headers_mut()
             .insert("x-reefadmin-fragment", HeaderValue::from_static("true"));
-        // Keep older host scripts working during migration.
-        response
-            .headers_mut()
-            .insert("x-loco-admin-fragment", HeaderValue::from_static("true"));
         response
     } else {
         Json(items).into_response()
