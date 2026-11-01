@@ -1,17 +1,47 @@
 # Working on ReefAdmin
 
-ReefAdmin targets Loco applications and is built on SeaORM and Axum. Keep the core usable as an Axum router without requiring a Loco dependency.
+## Scope and boundaries
 
-Preserve application-owned authentication, authorization and domain operations. Do not add a second login system. Never present an unprotected admin mount as a production integration example.
+ReefAdmin targets Loco applications and is built on SeaORM and Axum. Keep the core usable as a plain Axum router. The core must not depend on Loco.
 
-Keep changes compatible with existing consumers. See PLAN.md and docs/architecture.md for scope, boundaries and upstream provenance.
+The host application owns authentication, authorization and domain operations. Do not add a second login system. Never show an unprotected admin mount as a production integration example.
 
-Use `mise run setup` to install the pinned tools, `mise run fmt` to format, and `mise run check` for the merge gate. With a disposable PostgreSQL test database, set `REEFADMIN_TEST_DATABASE_URL` and run `mise run check:postgres`, the ordinary Rust gate used by CI. It adds the ignored PostgreSQL integration tests; see README.md.
+Keep changes compatible with existing consumers. See PLAN.md for scope and docs/architecture.md for boundaries and upstream provenance.
 
-The manifest enables Clippy hygiene lints; warnings fail `mise run lint`. Clippy complexity/size reports (`mise run lint:metrics`) are advisory, not merge gates. Keep the Rust versions in Cargo.toml, rust-toolchain.toml and mise.toml aligned. New runtime assets must be included in the Cargo package allowlist.
+## Commands
 
-Run `mise run coverage:check` with the same disposable database for the 80% production Rust line-coverage gate. Run `mise run test:browser` for UI changes. See docs/testing.md for scope, report paths and the advisory mutation task. Do not exclude production code to meet the threshold.
+| Task | Command |
+| --- | --- |
+| Install the pinned tools | `mise run setup` |
+| Format | `mise run fmt` |
+| Merge gate | `mise run check` |
+| Merge gate with PostgreSQL | `mise run check:postgres` |
+| Coverage gate | `mise run coverage:check` |
+| Browser tests | `mise run test:browser` |
 
-Review new or changed documentation and user-facing text using the [Google developer documentation style guide](https://developers.google.com/style) and ASD-STE100 clarity principles. Use short, direct sentences, consistent terms and clear procedural steps. Preserve technical accuracy, exact API names and security requirements. Retain the project’s British spelling and established software terms. This is not a formal ASD-STE100 compliance claim. See PLAN.md slice 7 for the initial review scope and completion criteria.
+`check:postgres` is the gate CI runs. It adds the PostgreSQL integration tests, which are ignored by `check`. Both `check:postgres` and `coverage:check` need `REEFADMIN_TEST_DATABASE_URL` set to a disposable PostgreSQL database. See README.md for setup.
 
-Keep quality and security checks runnable locally through mise with open-source tools. Do not require a hosted scanning account, source upload or GitHub-specific security service. CI should call the same portable tasks.
+Run `mise run test:browser` after any UI change.
+
+## Rules for code
+
+- Clippy hygiene lints are enabled in the manifest. A warning fails `mise run lint`.
+- `mise run lint:metrics` reports Clippy complexity and size warnings. These are advisory and not part of the merge gate.
+- Keep the Rust version identical in Cargo.toml, rust-toolchain.toml and mise.toml.
+- Add every new runtime asset to the Cargo package allowlist.
+- The coverage gate requires 80% line coverage of production Rust. Do not exclude production code to reach it. See docs/testing.md for scope, report paths and the advisory mutation task.
+
+## Rules for documentation
+
+Review new or changed documentation and user-facing text against the [Google developer documentation style guide](https://developers.google.com/style) and ASD-STE100 clarity principles:
+
+- Use short, direct sentences and clear procedural steps.
+- Use one term for one thing.
+- Keep technical accuracy, exact API names and security requirements.
+- Keep the project's British spelling and established software terms.
+
+This is not a formal ASD-STE100 compliance claim. PLAN.md slice 7 records the initial review scope and completion criteria.
+
+## Rules for checks
+
+Every quality and security check must run locally through mise with open-source tools. Do not require a hosted scanning account, a source upload or a GitHub-specific security service. CI calls the same mise tasks.
