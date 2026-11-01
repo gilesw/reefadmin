@@ -20,7 +20,7 @@ Tested with PostgreSQL and SQLite. Uploads, editable inlines and many-to-many co
 
 ## Integration
 
-Your application supplies the database connection, the entity models, an access policy, and session and CSRF middleware. In the example below, `posts`, `MyPolicy`, `require_staff` and `require_csrf` stand for those components.
+Your application supplies the database connection, entity models, access policy, and session and CSRF middleware. Below, `posts`, `MyPolicy`, `require_staff` and `require_csrf` stand for those.
 
 1. Add the dependency:
 
@@ -61,13 +61,13 @@ Your application supplies the database connection, the entity models, an access 
 
 The staff middleware must insert a trusted `AdminActor` request extension. Run session middleware before the staff check. In Loco, mount the router in an initializer using `ctx.db`.
 
-The `examples/loco/` directory contains a runnable application with host login, CSRF protection, scoped inventory and integration tests. Its README has setup instructions.
+`examples/loco/` is a runnable application with host login, CSRF protection, scoped inventory and integration tests.
 
 ### Permissions
 
-Your application owns accounts, policy decisions and CSRF protection. ReefAdmin requires a policy and enforces it for each operation and each database row. See [permissions](docs/permissions.md) for the policy interface and an example.
+ReefAdmin requires a policy and enforces it for each operation and database row. See [permissions](docs/permissions.md).
 
-These settings limit the available operations and fields for all users:
+These settings apply to all users:
 
 - `can_add`, `can_edit` and `can_delete` restrict operations.
 - `.fields(...)` selects form fields. `.list_display(...)` selects list columns.
@@ -81,15 +81,15 @@ Bootstrap and HTMX are bundled. Add application assets with `.extra_stylesheet(.
 
 ## Mutation observers
 
-Register a `MutationObserver` with `.observe_mutations(observer)` to update derived data in the same transaction as an admin write. Use the supplied transaction. An error rolls back both the admin write and the observer's changes.
+Register a `MutationObserver` with `.observe_mutations(observer)` to update derived data in the same transaction as an admin write. Use the supplied transaction. An error rolls back both.
 
-Custom actions manage their own transactions and do not invoke observers. Bulk deletion commits each row separately. See [architecture](docs/architecture.md) for callback details and side-effect handling.
+Custom actions manage their own transactions and do not invoke observers. Bulk deletion commits each row separately. See [architecture](docs/architecture.md).
 
 ## Request errors
 
 Internal failures return a generic HTTP 500 response and emit a `tracing` error event. Configure a subscriber in the host to collect diagnostics.
 
-Form validation returns HTTP 422 with field errors. To show a failed add or change write as a form error, register a `ValidationErrorMapper` with `.map_write_errors(mapper)`. The mapper receives the entity name and the error. It returns field messages, or `None` to keep the generic response. Use the key `__all__` for a form-level message. A mapped error renders the form again with HTTP 422. The write is already rolled back. Treat returned messages as public text. See [architecture](docs/architecture.md#request-errors).
+Form validation returns HTTP 422 with field errors. To show a failed add or change write the same way, register a `ValidationErrorMapper` with `.map_write_errors(mapper)`. It receives the entity name and the error, and returns field messages or `None`. The key `__all__` is a form-level message. The write is rolled back before the mapper runs. Messages are public text. See [architecture](docs/architecture.md#request-errors).
 
 Custom actions return `Ok(ActionResult::error(message))` for messages intended for users. A returned `Err(...)` is an internal failure.
 
@@ -101,7 +101,7 @@ During 0.1.x, patch releases preserve the public Rust API. Breaking changes use 
 
 ## Development
 
-Install [mise](https://mise.jdx.dev/getting-started.html), then run these commands from the repository directory:
+Install [mise](https://mise.jdx.dev/getting-started.html), then run:
 
 ```sh
 mise run setup
@@ -109,42 +109,42 @@ mise run fmt
 mise run check
 ```
 
-`setup` installs the pinned tools, including Rust 1.98.1. The crate uses Axum 0.8 and SeaORM 2. `check` runs formatting, workflow and dependency lint, Clippy, tests, rustdoc and package verification. Use `mise tasks ls` to list individual checks.
+`setup` installs the pinned tools, including Rust 1.98.1. The crate uses Axum 0.8 and SeaORM 2. `check` runs formatting, lint, Clippy, tests, rustdoc and package verification. `mise tasks ls` lists the rest.
 
 ### PostgreSQL
 
-The PostgreSQL tests need a disposable test database. Replace `YOUR_ROLE` with a PostgreSQL role that can create schemas in that database, then run:
+Create a disposable database. Replace `YOUR_ROLE` with a role that can create schemas in it, then run:
 
 ```sh
 REEFADMIN_TEST_DATABASE_URL=postgres://YOUR_ROLE@localhost/reefadmin_test \
   mise run check:postgres
 ```
 
-The tests use isolated schemas and remove them after success or assertion failures.
+The tests create and drop their own schemas.
 
 ### Coverage
 
-With the same variable set, `mise run coverage:check` enforces at least 80% line coverage of production Rust. See [testing](docs/testing.md) for reports, scope and optional mutation checks.
+With the same variable set, `mise run coverage:check` enforces 80% line coverage of production Rust. See [testing](docs/testing.md).
 
 ### Browser tests
 
-Run `mise run browser:setup` once, then `mise run test:browser`. Node and Chromium are development tools only.
+Run `mise run browser:setup` once, then `mise run test:browser`.
 
 ### Loco example
 
-Run `mise run test:loco`, `mise run test:loco:browser` and `mise run test:loco:package`. With the disposable database configured, also run `mise run test:loco:postgres` and `mise run coverage:loco`. The coverage task enforces a separate 80% gate for the example, including its executable.
+Run `mise run test:loco`, `mise run test:loco:browser` and `mise run test:loco:package`. With the database variable set, also run `mise run test:loco:postgres` and `mise run coverage:loco`, a separate 80% gate for the example.
 
 ### Other checks
 
-- Dependency, static and dynamic security checks run locally and need no hosted scanning account. See [security checks](docs/security.md).
+- Security checks run locally. See [security checks](docs/security.md).
 - `mise run lint:metrics` reports advisory Clippy complexity and size warnings.
-- `mise run release:check` runs the release gates and a publication dry run without uploading the crate. See [Releasing ReefAdmin](docs/releasing.md).
+- `mise run release:check` runs the release gates and a publish dry run. See [releasing](docs/releasing.md).
 
 ## Origins and upstream contributions
 
 ReefAdmin is adapted from [axum-admin](https://github.com/rinnguyen711/axum-admin). It keeps the entity-registration design and bulk-action model, with revised routing, forms and SeaORM integration.
 
-Upstream provides built-in authentication, Casbin permissions and an ORM-agnostic adapter. ReefAdmin focuses on SeaORM and uses the host application's authentication and permissions. A wholesale merge is therefore a larger discussion, but focused fixes may still be useful upstream. Foreign-key selection, PostgreSQL bindings and transaction handling are candidates. Reproduce each issue on current upstream before proposing a fix. The original revision and implementation details are recorded in [architecture](docs/architecture.md).
+Upstream provides built-in authentication, Casbin permissions and an ORM-agnostic adapter. ReefAdmin uses SeaORM and the host's authentication and permissions, so focused fixes rather than a merge may be useful upstream. Candidates are foreign-key selection, PostgreSQL bindings and transaction handling. Reproduce each issue on current upstream first. The original revision is recorded in [architecture](docs/architecture.md).
 
 ## Licence
 
