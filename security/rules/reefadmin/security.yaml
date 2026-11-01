@@ -1,0 +1,28 @@
+rules:
+  - id: reefadmin-public-internal-error
+    languages: [rust]
+    message: Do not include diagnostic error text in HTTP 500 responses. Log it and return a generic message.
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: (StatusCode::INTERNAL_SERVER_ERROR, $ERR.to_string())
+          - pattern: (StatusCode::INTERNAL_SERVER_ERROR, format!(..., $ERR, ...))
+  - id: reefadmin-disable-tls-verification
+    languages: [rust]
+    message: Do not disable TLS certificate or hostname verification.
+    severity: ERROR
+    pattern-either:
+      - pattern: $CLIENT.danger_accept_invalid_certs(true)
+      - pattern: $CLIENT.danger_accept_invalid_hostnames(true)
+  - id: reefadmin-interpolated-sql
+    languages: [rust]
+    message: Bind SQL values instead of interpolating them into an unprepared statement.
+    severity: ERROR
+    pattern: $DB.execute_unprepared(&format!(...))
+  - id: reefadmin-dynamic-code
+    languages: [javascript]
+    message: Do not evaluate strings as JavaScript code.
+    severity: ERROR
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)

@@ -118,26 +118,28 @@ test.describe('without JavaScript', () => {
   });
 });
 
-test('a slower old lookup cannot replace newer options', async ({ page }) => {
-  await page.goto('/staff/rules/1/change');
-  let firstStarted;
-  const started = new Promise((resolve) => { firstStarted = resolve; });
-  await page.route('**/staff/exchanges/autocomplete?*', async (route) => {
-    const query = new URL(route.request().url()).searchParams.get('q');
-    if (query === 'old') {
-      firstStarted();
-      await new Promise((resolve) => setTimeout(resolve, 900));
-    }
-    await route.fulfill({ contentType: 'text/html', headers: { 'X-Loco-Admin-Fragment': 'true' }, body: `<option value="${query}">${query}</option>` }).catch(() => {});
+for (const marker of ['X-ReefAdmin-Fragment', 'X-Loco-Admin-Fragment']) {
+  test(`a slower old lookup cannot replace newer options (${marker})`, async ({ page }) => {
+    await page.goto('/staff/rules/1/change');
+    let firstStarted;
+    const started = new Promise((resolve) => { firstStarted = resolve; });
+    await page.route('**/staff/exchanges/autocomplete?*', async (route) => {
+      const query = new URL(route.request().url()).searchParams.get('q');
+      if (query === 'old') {
+        firstStarted();
+        await new Promise((resolve) => setTimeout(resolve, 900));
+      }
+      await route.fulfill({ contentType: 'text/html', headers: { [marker]: 'true' }, body: `<option value="${query}">${query}</option>` }).catch(() => {});
+    });
+    const input = page.locator('[data-admin-autocomplete]');
+    await input.fill('old');
+    await started;
+    await input.fill('new');
+    await expect(page.locator('datalist option')).toHaveAttribute('value', 'new');
+    await page.waitForTimeout(1000);
+    await expect(page.locator('datalist option')).toHaveAttribute('value', 'new');
   });
-  const input = page.locator('[data-admin-autocomplete]');
-  await input.fill('old');
-  await started;
-  await input.fill('new');
-  await expect(page.locator('datalist option')).toHaveAttribute('value', 'new');
-  await page.waitForTimeout(1000);
-  await expect(page.locator('datalist option')).toHaveAttribute('value', 'new');
-});
+}
 
 test('pending toggles cannot be submitted twice', async ({ page }) => {
   await page.goto('/staff/accounts');

@@ -1,0 +1,21 @@
+logger:
+  enable: false
+  pretty_backtrace: false
+  level: info
+  format: compact
+server:
+  binding: 127.0.0.1
+  host: http://127.0.0.1
+  port: 39128
+database:
+  uri: sqlite://inventory.sqlite?mode=rwc
+  enable_logging: false
+  min_connections: 1
+  max_connections: 1
+  connect_timeout: 5000
+  idle_timeout: 5000
+  auto_migrate: true
+  dangerously_truncate: false
+  dangerously_recreate: false
+workers:
+  mode: ForegroundBlocking

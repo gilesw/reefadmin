@@ -9,7 +9,7 @@ Install mise first. From the repository directory, run `mise run setup` to insta
 Run `mise run browser:setup` before your first browser test. Then run:
 
 ```sh
-export LOCO_ADMIN_TEST_DATABASE_URL=postgres://YOUR_ROLE@localhost/loco_admin_test
+export REEFADMIN_TEST_DATABASE_URL=postgres://YOUR_ROLE@localhost/reefadmin_test
 mise run check:postgres
 mise run coverage:check
 mise run test:browser
@@ -61,6 +61,18 @@ CSV request tests cover quotes, commas, mixed newlines, Unicode, empty cells/res
 The rename and public-error review passed 81 Rust tests (22 unit, 52 SQLite request and seven PostgreSQL tests), all nine Chromium scenarios, strict Clippy, rustdoc and package verification. Production line coverage is **94.80%** (3,100 of 3,270 lines). The added request test verifies generic HTTP 500 responses for template and database read failures in full-page and HTMX requests. Existing write tests also check that internal observer and database messages stay private while transactions roll back.
 
 A separate consumer crate compiles against the extracted `reefadmin` package using the `loco-admin` dependency alias and an explicit access policy. This checks package and import compatibility; it does not replace testing an existing host application's session, CSRF and domain integration.
+
+The subsequent naming cleanup passed the complete PostgreSQL merge gate and all ten browser scenarios, including canonical and legacy fragment headers. Production line coverage is **94.82%** (3,110 of 3,280 lines). Test commands now use `REEFADMIN_TEST_DATABASE_URL`; the previous setting remains a compatibility fallback.
+
+## Loco integration example
+
+The standalone application under `examples/loco/` boots Loco 1.2.0 with migrations, host-owned signed sessions and a protected ReefAdmin router. Run `mise run test:loco` for formatting, strict Clippy, six HTTP integration tests and an executable provisioning/startup test. Run `mise run test:loco:postgres` with the disposable database setting above for the PostgreSQL integration test. Each PostgreSQL run uses its own temporary schema.
+
+`mise run test:loco:browser` covers three Chromium scenarios, including real login, scoped edits, autocomplete, toggles, logout, denied access, expired browser identity and operation without JavaScript. `mise run test:loco:package` runs the example tests against the extracted Cargo package.
+
+`mise run coverage:loco` combines the example's ordinary and PostgreSQL tests and enforces a separate 80% production Rust line-coverage floor. The executable remains in scope. Reports are under `target/coverage-loco/`; CI retains these alongside the core reports. On 1 November 2026, example coverage was **91.40%** (425 of 465 lines). Core coverage after the SAST-driven control-flow cleanup was **94.79%** (3,109 of 3,280 lines).
+
+See [Local security checks](security.md) for the portable dependency audit, static rule tests and authenticated passive ZAP scan. These complement the permission and rollback tests.
 
 ## Mutation checks
 

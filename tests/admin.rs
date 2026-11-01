@@ -871,6 +871,7 @@ async fn list_fragments_match_full_results_and_history_gets_a_page() {
     )
     .await;
     assert_eq!(partial.status, StatusCode::OK);
+    assert_eq!(partial.headers["x-reefadmin-fragment"], "true");
     assert_eq!(partial.headers["x-loco-admin-fragment"], "true");
     assert_eq!(partial.headers["cache-control"], "no-store");
     assert!(
@@ -926,6 +927,7 @@ async fn relationship_options_support_html_and_keep_json_contract() {
     )
     .await;
     assert_eq!(html.status, StatusCode::OK);
+    assert_eq!(html.headers["x-reefadmin-fragment"], "true");
     assert_eq!(html.headers["x-loco-admin-fragment"], "true");
     assert!(html.body.contains("value=\"XLON\""));
     assert!(!html.body.contains("<!doctype"));
@@ -981,6 +983,7 @@ async fn enhanced_writes_use_host_sessions_csrf_and_permissions() {
         .unwrap();
     let reply = common::send(&app, request).await;
     assert_eq!(reply.status, StatusCode::OK);
+    assert_eq!(reply.headers["x-reefadmin-fragment"], "true");
     assert_eq!(reply.headers["x-loco-admin-fragment"], "true");
     assert!(reply.body.contains("Turn off"));
     assert!(!reply.body.contains("<!doctype"));
@@ -1062,6 +1065,7 @@ async fn enhanced_toggle_rolls_back_observer_failure() {
         .unwrap();
     let response = common::send(&app, request).await;
     assert_eq!(response.status, StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(!response.headers.contains_key("x-reefadmin-fragment"));
     assert!(!response.headers.contains_key("x-loco-admin-fragment"));
     assert!(!response.body.contains("Rejected by application"));
     assert!(response.body.contains("contact your administrator"));

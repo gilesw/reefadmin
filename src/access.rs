@@ -122,13 +122,13 @@ impl WriteAccess<'_> {
             return Ok(());
         }
         for relation in &self.relations {
-            let value = proposed.get(&relation.column);
-            if value.is_none_or(Value::is_null)
-                || value == current.and_then(|row| row.get(&relation.column))
-            {
+            let Some(value) = proposed.get(&relation.column) else {
+                continue;
+            };
+            if value.is_null() || Some(value) == current.and_then(|row| row.get(&relation.column)) {
                 continue;
             }
-            let id = key_string(value.unwrap());
+            let id = key_string(value);
             let condition =
                 eq_condition(&relation.table, &relation.key, &id).map_err(|_| denied())?;
             let query = Query::select()

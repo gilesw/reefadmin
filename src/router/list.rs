@@ -403,6 +403,10 @@ async fn render_list(
     if partial {
         response
             .headers_mut()
+            .insert("x-reefadmin-fragment", HeaderValue::from_static("true"));
+        // Keep older host scripts working during migration.
+        response
+            .headers_mut()
             .insert("x-loco-admin-fragment", HeaderValue::from_static("true"));
     }
     Ok(response)
@@ -616,6 +620,10 @@ pub(super) async fn toggle(
         let mut response = html(StatusCode::OK, body);
         response
             .headers_mut()
+            .insert("x-reefadmin-fragment", HeaderValue::from_static("true"));
+        // Keep older host scripts working during migration.
+        response
+            .headers_mut()
             .insert("x-loco-admin-fragment", HeaderValue::from_static("true"));
         response
             .headers_mut()
@@ -662,6 +670,10 @@ pub(super) async fn autocomplete(
             .renderer
             .render("relationship_options.html", context! { items })?;
         let mut response = html(StatusCode::OK, body);
+        response
+            .headers_mut()
+            .insert("x-reefadmin-fragment", HeaderValue::from_static("true"));
+        // Keep older host scripts working during migration.
         response
             .headers_mut()
             .insert("x-loco-admin-fragment", HeaderValue::from_static("true"));

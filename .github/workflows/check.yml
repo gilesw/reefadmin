@@ -13,9 +13,9 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: loco-admin
-          POSTGRES_PASSWORD: loco-admin
-          POSTGRES_DB: loco_admin_test
+          POSTGRES_USER: reefadmin
+          POSTGRES_PASSWORD: reefadmin
+          POSTGRES_DB: reefadmin_test
         ports:
           - 5432:5432
         options: >-
@@ -24,7 +24,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      LOCO_ADMIN_TEST_DATABASE_URL: postgres://loco-admin:loco-admin@localhost:5432/loco_admin_test
+      REEFADMIN_TEST_DATABASE_URL: postgres://reefadmin:reefadmin@localhost:5432/reefadmin_test
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
@@ -33,6 +33,10 @@ jobs:
       - run: mise run check:postgres
       - run: mise run browser:setup
       - run: mise run test:browser
+      - run: mise run test:loco
+      - run: mise run test:loco:postgres
+      - run: mise run test:loco:browser
+      - run: mise run test:loco:package
       - name: Assert checks left the checkout unchanged
         run: |
           if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
@@ -51,9 +55,9 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: loco-admin
-          POSTGRES_PASSWORD: loco-admin
-          POSTGRES_DB: loco_admin_test
+          POSTGRES_USER: reefadmin
+          POSTGRES_PASSWORD: reefadmin
+          POSTGRES_DB: reefadmin_test
         ports:
           - 5432:5432
         options: >-
@@ -62,7 +66,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      LOCO_ADMIN_TEST_DATABASE_URL: postgres://loco-admin:loco-admin@localhost:5432/loco_admin_test
+      REEFADMIN_TEST_DATABASE_URL: postgres://reefadmin:reefadmin@localhost:5432/reefadmin_test
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
@@ -71,11 +75,22 @@ jobs:
           key: coverage
       - run: mise run setup
       - run: mise run coverage:check
+      - run: mise run coverage:loco
       - name: Retain coverage reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage
-          path: target/coverage/
+          path: |
+            target/coverage/
+            target/coverage-loco/
           if-no-files-found: warn
           retention-days: 14
+
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: mise run security:audit

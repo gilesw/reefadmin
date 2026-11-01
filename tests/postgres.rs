@@ -1,4 +1,4 @@
-//! Run explicitly with LOCO_ADMIN_TEST_DATABASE_URL pointing at a test database.
+//! Run explicitly with REEFADMIN_TEST_DATABASE_URL pointing at a test database.
 mod common;
 
 use axum::{Router, http::StatusCode};
@@ -67,8 +67,9 @@ where
     F: FnOnce(DatabaseConnection) -> Fut + Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
 {
-    let url = env::var("LOCO_ADMIN_TEST_DATABASE_URL")
-        .expect("set LOCO_ADMIN_TEST_DATABASE_URL to a disposable PostgreSQL test database");
+    let url = env::var("REEFADMIN_TEST_DATABASE_URL")
+        .or_else(|_| env::var("LOCO_ADMIN_TEST_DATABASE_URL"))
+        .expect("set REEFADMIN_TEST_DATABASE_URL to a disposable PostgreSQL test database");
     assert!(url.starts_with("postgres://") || url.starts_with("postgresql://"));
     let control = Database::connect(&url).await.unwrap();
     let nonce = SystemTime::now()
@@ -77,7 +78,7 @@ where
         .as_nanos();
     static SEQUENCE: AtomicU64 = AtomicU64::new(0);
     let sequence = SEQUENCE.fetch_add(1, Ordering::Relaxed);
-    let schema = format!("loco_admin_{}_{nonce}_{sequence}", process::id());
+    let schema = format!("reefadmin_{}_{nonce}_{sequence}", process::id());
     control
         .execute_unprepared(&format!("CREATE SCHEMA {schema}"))
         .await
@@ -131,7 +132,7 @@ const INSERT: &str =
     "name=First&tags=%5B%22fish%22%5D&optional_tags=&active=true&small=7&rating=1.5";
 
 #[tokio::test]
-#[ignore = "requires LOCO_ADMIN_TEST_DATABASE_URL"]
+#[ignore = "requires REEFADMIN_TEST_DATABASE_URL"]
 async fn arrays_distinguish_null_empty_and_invalid_shapes() {
     in_schema(|db| async move {
         let app = app(&db);
@@ -170,7 +171,7 @@ async fn arrays_distinguish_null_empty_and_invalid_shapes() {
 }
 
 #[tokio::test]
-#[ignore = "requires LOCO_ADMIN_TEST_DATABASE_URL"]
+#[ignore = "requires REEFADMIN_TEST_DATABASE_URL"]
 async fn typed_numeric_filters_and_integer_keys_work_on_postgres() {
     in_schema(|db| async move {
         let app = app(&db);
@@ -219,7 +220,7 @@ async fn typed_numeric_filters_and_integer_keys_work_on_postgres() {
 }
 
 #[tokio::test]
-#[ignore = "requires LOCO_ADMIN_TEST_DATABASE_URL"]
+#[ignore = "requires REEFADMIN_TEST_DATABASE_URL"]
 async fn string_keys_and_database_constraint_failures_preserve_data() {
     in_schema(|db| async move {
         let app = Router::new().nest(
@@ -286,7 +287,7 @@ async fn string_keys_and_database_constraint_failures_preserve_data() {
 }
 
 #[tokio::test]
-#[ignore = "requires LOCO_ADMIN_TEST_DATABASE_URL"]
+#[ignore = "requires REEFADMIN_TEST_DATABASE_URL"]
 async fn observer_failures_roll_back_each_write_and_derived_changes() {
     in_schema(|db| async move {
         let app = app(&db);
@@ -408,7 +409,7 @@ async fn policy_scopes_recheck_saved_rows_and_roll_back_writes() {
 }
 
 #[tokio::test]
-#[ignore = "requires LOCO_ADMIN_TEST_DATABASE_URL"]
+#[ignore = "requires REEFADMIN_TEST_DATABASE_URL"]
 async fn exports_project_allowed_columns_and_keep_typed_filters_and_selected_ids() {
     in_schema(|db| async move {
         let app = Router::new().nest(
@@ -445,7 +446,7 @@ async fn exports_project_allowed_columns_and_keep_typed_filters_and_selected_ids
 }
 
 #[tokio::test]
-#[ignore = "requires LOCO_ADMIN_TEST_DATABASE_URL"]
+#[ignore = "requires REEFADMIN_TEST_DATABASE_URL"]
 async fn toggle_permissions_batch_typed_postgres_keys() {
     use std::sync::{Arc, Mutex};
     in_schema(|mut db| async move {

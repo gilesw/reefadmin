@@ -266,15 +266,73 @@ Retain bundled default assets, configurable templates and branding. Include keyb
 
 Document model persistence hooks, mutation observers and custom operations separately. State composite-key, backend, relationship and upload limitations explicitly. Validate configuration early with actionable errors.
 
+## Loco integration example
+
+Implemented in `examples/loco/` against published Loco 1.2.0. Six HTTP integration tests boot the real application; a separate PostgreSQL test and three browser scenarios exercise the protected mount. The extracted crate also passes the consumer tests. See the example README for setup.
+
+### Purpose and layout
+
+The inventory application in `examples/loco/` has its own `Cargo.toml`, lockfile, migrations, configuration and tests. It stays outside the core crate dependency graph. Loco remains an example dependency, not a ReefAdmin runtime dependency or feature flag.
+
+The example pins published Loco 1.2.0 and locks its dependencies, including Axum 0.8 and SeaORM 2. It uses the repository's pinned Rust toolchain.
+
+Files:
+
+- `src/app.rs`: Loco application hooks and initializer registration.
+- `src/initializers/admin.rs`: build ReefAdmin from `ctx.db`, then mount the protected router at `/staff` through `Initializer::after_routes`.
+- `src/admin/policy.rs`: translate application roles and ownership into ReefAdmin policies.
+- `src/admin/middleware.rs`: adapt the application's resolved session to `AdminActor` and `CsrfToken`; enforce staff entry and CSRF checks.
+- `src/models.rs` and `src/migration.rs`: application users, sessions, categories and products.
+- `tests/`: boot the Loco application, exercise HTTP requests and check persisted changes.
+
+The initializer runs after application routes have been constructed. Explicitly attach the required middleware to the admin router before nesting it; do not assume layers already attached to the parent will protect newly added routes. Verify the actual request order in tests.
+
+### Application and protection contract
+
+The inventory host owns its users and single login flow. It uses Loco password hashing, signed cookies and revocable database sessions. Loco's JWT feature is disabled: its published implementation pulls in crypto dependencies with known advisories. Resolve sessions through the host, load current role/ownership information and only then construct `AdminActor`. Never accept actor IDs or staff roles from request headers or form fields.
+
+Have two staff users who own different products and one ordinary user. Products have a name, owner, category and active flag. Categories provide a foreign-key select and autocomplete. Hide authentication tables from the admin. Keep ownership fields read-only and prevent forged ownership changes; keep creation disabled until the application can assign and validate the owner securely.
+
+Staff can view and edit their own products, toggle their active flag and export an explicit field allowlist. Unknown operations remain denied. A custom archive action calls an application function with the authenticated actor and authorized IDs; the function owns its transaction and rechecks access. This demonstrates the existing action API without implying that domain-operation adapters are implemented.
+
+Run session resolution, staff authorization and CSRF validation before admin handlers. Use a host-issued unpredictable token bound to the session, include it through `CsrfToken` and validate it on every unsafe request. Reuse the host's CSRF facility where available; an example-specific adapter belongs in the host application. Fixed tokens and test identity injection must not exist in the runnable application.
+
+Unauthenticated ordinary pages redirect to the application's login page. Enhanced requests use the host's explicit session-expiry response and must never insert login HTML into an admin fragment. Authenticated non-staff users receive HTTP 403. Missing or invalid CSRF tokens reject writes before any domain operation runs. No default administrator credentials or automatic login; local setup uses an explicit account-creation command and binds to loopback.
+
+### Verification
+
+| Area | Required evidence |
+| --- | --- |
+| Boot and mounting | Loco boots with migrations, runs the initializer, serves `/staff` and bundled assets, and retains ordinary application routes |
+| Identity | Logged-out, expired-session and non-staff requests cannot read records or mutate data; successive users do not share actor state |
+| Row scopes | Lists, detail, autocomplete, exports and direct-ID requests expose only permitted records; mixed unauthorized selections fail |
+| Writes | Valid edits persist; missing/invalid/cross-session CSRF, forged ownership and unauthorized toggles leave data unchanged |
+| Domain actions | Archive calls the host function, rejects forged IDs, rechecks ownership and rolls back on failure |
+| Browser behaviour | Real host login, a protected edit, autocomplete, toggle, logout/session expiry and ordinary forms without JavaScript |
+| Package compatibility | The example builds and tests against the extracted release-candidate crate, not only the repository source |
+
+The boot/request tests use isolated SQLite databases. A disposable PostgreSQL test covers mounting and writes. Browser tests log in through the application's normal flow; test helpers seed users without bypassing authentication for security assertions.
+
+### Delivery slices
+
+1. Boot the pinned Loco application with migrations and a deny-by-default admin mount. Verify middleware order and protect every admin endpoint.
+2. Connect host sessions, staff checks, CSRF and ownership policy. Add direct-request denial and rollback tests.
+3. Add category lookup, export and the application archive action. Add browser checks and clear local setup instructions.
+4. Add `mise run test:loco` and `mise run test:loco:browser` tasks and CI jobs. Run the application tests against the extracted Cargo package in a temporary directory. Keep example dependencies and assets out of the core archive; explicitly account for example Rust code when documenting coverage scope.
+
+Completion means a fresh checkout can follow the documented setup, boot the protected example and run its checks without a sibling application repository. Record the exact Loco version and results. The tasks and files now exist. CI calls the same portable mise tasks; the core crate does not depend on Loco.
+
+Design references: [Loco initializer and application hooks](https://github.com/loco-rs/loco/blob/master/src/app.rs), [Loco dependency manifest](https://github.com/loco-rs/loco/blob/master/Cargo.toml), and ReefAdmin's [permission contract](docs/permissions.md). Recheck the pinned release source during implementation.
+
 ## ReefAdmin release preparation
 
-The crate and Rust import name are `reefadmin`. Cargo dependency aliases support consumers that keep `loco_admin` imports. The test database environment variable and fragment response header retain their previous names. Repository metadata points to the existing GitHub repository.
+The crate and Rust import name are `reefadmin`. Cargo dependency aliases support consumers that keep `loco_admin` imports. The test database environment variable and fragment response header use ReefAdmin names, with the previous names retained as compatibility aliases. Repository metadata points to `gilesw/reefadmin`.
 
 The initial 0.1 release covers the implemented CRUD and policy contracts. Domain-operation adapters, audit hooks, rich editing and the optional partial-model simplification remain follow-up work. Hosts that require these features should retain application-owned routes and operations.
 
-Verification: 81 Rust tests, nine browser scenarios and 94.80% production line coverage pass. Strict Clippy, rustdoc, package verification and a separate consumer build using the compatibility alias pass.
+Verification includes core and Loco HTTP, PostgreSQL, browser and extracted-package tests. See docs/testing.md for measured coverage and docs/releasing.md for the current release procedure. Historical rust-code-analysis measurements above record earlier refactoring work; the tool has been removed from the active checks.
 
-Before publishing, confirm crates.io name availability and credentials, commit the release candidate, verify existing application integrations and configure the release workflow. Publishing remains a separate explicit action.
+Before publishing, confirm crates.io name availability and credentials, commit the release candidate and run the portable release procedure in docs/releasing.md. The Loco consumer tests exercise a real host integration; arbitrary downstream applications still need their own checks. Publishing remains a separate explicit action.
 
 ## Public release gates
 
@@ -286,6 +344,6 @@ Before publishing, confirm crates.io name availability and credentials, commit t
 - Attribution, dependency licensing, crate-name availability, repository metadata, API docs and changelog are ready.
 - Version compatibility and migration policies are documented.
 - The documentation and interface-language review in slice 7 is complete.
-- Tag/publish automation is configured for the established remote.
+- Portable release checks and an explicit manual publish/tag procedure are documented; no hosted release service is required.
 
 Publish an initial 0.x release once the reusable baseline and protection contracts are dependable. Advanced widgets need not all block that release. Publishing requires a separate explicit release action.

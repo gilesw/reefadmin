@@ -38,7 +38,7 @@
           <div class="form-control-plaintext" id="{{ input_id }}">
             {% if field.display == "" %}<span class="text-body-secondary">–</span>
             {% elif field.display_url %}<a href="{{ field.display_url }}">{{ field.display }}</a>
-            {% else %}<span style="white-space: pre-wrap">{{ field.display }}</span>{% endif %}
+            {% else %}<span class="admin-pre-wrap">{{ field.display }}</span>{% endif %}
           </div>
           {% elif field.widget == "select" %}
           <select class="form-select{% if field.error %} is-invalid{% endif %}" id="{{ input_id }}" name="{{ field.name }}"{% if field.required %} required{% endif %}>

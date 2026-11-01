@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.0 unreleased
+## 0.1.0 — 1 November 2026
+
+- Keep Clippy complexity checks advisory and remove the old rust-code-analysis task. Keep SAST and passive DAST optional; dependency auditing remains a release check. Add portable release verification and publication dry-run tasks.
+
+- Add a runnable inventory example pinned to Loco 1.2.0, with application-owned login, revocable signed sessions, CSRF protection, ownership policies and a transactional archive action. Add HTTP, PostgreSQL, browser, executable and extracted-package checks.
+- Add portable dependency audit, OpenGrep rule tests/scans and authenticated ZAP passive scanning through mise. Keep rule coverage and outstanding dependency maintenance warnings explicit.
+- Move inline template styles into the bundled stylesheet so hosts can forbid inline styles with CSP.
 
 - Clarify setup, permissions and transaction documentation. Use explicit action labels and describe unavailable admin sections without implying that no entities are registered.
 
@@ -10,7 +16,7 @@
 
 - Require explicit `.export_fields(...)` for CSV export; validate field names and select only configured columns. Existing registrations default to no export.
 
-- Rename the package and Rust imports to `reefadmin`. Existing consumers can keep `loco_admin` imports with a Cargo dependency alias. Preserve `LOCO_ADMIN_TEST_DATABASE_URL` and `X-Loco-Admin-Fragment` for compatibility.
+- Rename the package and Rust imports to `reefadmin`. Existing consumers can keep `loco_admin` imports with a Cargo dependency alias. Use `REEFADMIN_TEST_DATABASE_URL` and `X-ReefAdmin-Fragment`; retain the previous names as compatibility aliases. Update the repository URL and CI database names to ReefAdmin.
 
 - Log internal request failures through `tracing` and return a generic HTTP 500 response. Keep field-validation errors and explicit `ActionResult::Error` messages visible to users. See the README migration notes.
 

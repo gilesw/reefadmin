@@ -15,7 +15,7 @@ run = "cargo build --locked"
 
 [tasks.fmt]
 description = "Format Rust source (the only check task that rewrites source)"
-run = "cargo fmt --all"
+run = ["cargo fmt --all", "cargo fmt --manifest-path examples/loco/Cargo.toml"]
 
 [tasks."fmt:check"]
 description = "Check Rust formatting without changing files"
@@ -37,17 +37,12 @@ run = "cargo machete"
 description = "Report complexity and size findings; not a merge gate"
 run = "cargo clippy --all-targets --locked -- -W clippy::cognitive_complexity -W clippy::too_many_lines -W clippy::too_many_arguments -W clippy::excessive_nesting -W clippy::type_complexity -W clippy::fn_params_excessive_bools"
 
-[tasks."metrics:rust-code-analysis"]
-description = "Export Rust source metrics under target/rust-code-analysis"
-tools = { "cargo:rust-code-analysis-cli" = "0.0.25" }
-run = "mkdir -p target/rust-code-analysis && rust-code-analysis-cli --metrics --paths src --include '**/*.rs' --output-format json --output target/rust-code-analysis"
-
 [tasks.test]
 description = "Unit and SQLite request tests (no external database required)"
 run = "cargo test --locked"
 
 [tasks."test:postgres"]
-description = "PostgreSQL integration test; requires LOCO_ADMIN_TEST_DATABASE_URL"
+description = "PostgreSQL integration test; requires REEFADMIN_TEST_DATABASE_URL"
 run = "cargo test --locked --test postgres -- --ignored"
 
 [tasks.doc]
@@ -68,7 +63,7 @@ description = "Local merge gate; run test:postgres as well when PostgreSQL is av
 run = ["mise run check:fast", "mise run build", "mise run lint", "mise run test", "mise run doc", "mise run package:check"]
 
 [tasks."check:postgres"]
-description = "Complete merge gate including PostgreSQL; requires LOCO_ADMIN_TEST_DATABASE_URL"
+description = "Complete merge gate including PostgreSQL; requires REEFADMIN_TEST_DATABASE_URL"
 run = ["mise run check", "mise run test:postgres"]
 
 [tasks."browser:setup"]
@@ -98,11 +93,60 @@ description = "Check coverage runner failure propagation and report freshness"
 run = "bash scripts/tests/coverage.sh"
 
 [tasks."lint:scripts"]
-description = "Lint coverage runner scripts"
+description = "Lint project shell scripts"
 tools = { shellcheck = "0.11.0" }
-run = "shellcheck scripts/coverage.sh scripts/tests/coverage.sh"
+run = "shellcheck scripts/coverage.sh scripts/tests/coverage.sh scripts/test-loco-package.sh scripts/security-sast.sh scripts/security-audit.sh scripts/coverage-loco.sh"
 
 [tasks."test:mutants"]
 description = "Advisory mutation checks for boolean parsing, truncation, length and pagination"
 tools = { "cargo:cargo-mutants" = "27.1.0" }
 run = "cargo mutants -f src/values.rs -f src/validator.rs -f src/urls.rs -F 'parse_bool|truncate|MinLength|with_page' --cargo-arg=--locked --cargo-test-arg=--lib --timeout 60 --build-timeout 300 --jobs 2 --output target/mutation"
+
+[tasks."test:loco"]
+description = "Boot and test the pinned Loco application"
+run = ["cargo fmt --manifest-path examples/loco/Cargo.toml -- --check", "cargo clippy --manifest-path examples/loco/Cargo.toml --all-targets --locked -- -D warnings", "cargo test --manifest-path examples/loco/Cargo.toml --locked"]
+
+[tasks."security:audit"]
+description = "Check both lockfiles against RustSec advisories"
+tools = { "cargo:cargo-audit" = "0.22.2" }
+run = "bash scripts/security-audit.sh"
+
+[tasks."security:sast"]
+description = "Local OpenGrep scan with vendored rules; findings require review"
+tools = { "github:opengrep/opengrep" = "1.33.1" }
+run = "bash scripts/security-sast.sh"
+
+[tasks."security:sast:test"]
+description = "Test the vendored and project-specific SAST rules"
+tools = { "github:opengrep/opengrep" = "1.33.1" }
+run = "opengrep scan --disable-version-check --test security/rules"
+
+[tasks."test:loco:browser"]
+description = "Browser tests through the Loco application's real login"
+tools = { node = "24.15.0" }
+run = "npx playwright test --config playwright.loco.config.cjs"
+
+[tasks."security:dast"]
+description = "Authenticated local ZAP passive scan of the disposable Loco browser fixture"
+tools = { node = "24.15.0", java = "temurin-21.0.8+9.0.LTS" }
+run = "python3 scripts/security-dast.py"
+
+[tasks."test:loco:postgres"]
+description = "Loco login and writes against a disposable PostgreSQL database"
+run = "cargo test --locked --manifest-path examples/loco/Cargo.toml --test postgres -- --ignored"
+
+[tasks."test:loco:package"]
+description = "Test the Loco consumer against the extracted crate archive"
+run = "bash scripts/test-loco-package.sh"
+
+[tasks."coverage:loco"]
+description = "80% line-coverage gate for all Loco example Rust, including the executable"
+run = "bash scripts/coverage-loco.sh"
+
+[tasks."release:check"]
+description = "Validate the release candidate locally without publishing; requires disposable PostgreSQL"
+run = ["mise run check:postgres", "mise run test:loco", "mise run test:loco:postgres", "mise run test:browser", "mise run test:loco:browser", "mise run test:loco:package", "mise run coverage:check", "mise run coverage:loco", "mise run security:audit", "mise run release:dry-run"]
+
+[tasks."release:dry-run"]
+description = "Verify the crates.io upload without publishing (allows local edits)"
+run = "cargo publish --dry-run --locked --allow-dirty"

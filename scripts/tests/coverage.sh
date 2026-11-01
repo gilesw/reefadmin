@@ -21,13 +21,16 @@ MOCK
 chmod +x "$fixture/bin/cargo"
 export PATH="$fixture/bin:$PATH"
 cd "$fixture"
-export LOCO_ADMIN_TEST_DATABASE_URL=postgres://test/fixture
+export REEFADMIN_TEST_DATABASE_URL=postgres://test/fixture
 bash scripts/coverage.sh check
 [ -f target/coverage/complete ]
 grep -q -- '--fail-under-lines 80' calls
 grep -q -- '--test postgres --no-report -- --ignored' calls
+# The previous environment variable remains a compatibility fallback.
+env -u REEFADMIN_TEST_DATABASE_URL LOCO_ADMIN_TEST_DATABASE_URL=postgres://test/legacy bash scripts/coverage.sh check
+[ -f target/coverage/complete ]
 # Missing configuration must fail and discard old reports.
-if env -u LOCO_ADMIN_TEST_DATABASE_URL bash scripts/coverage.sh check 2>/dev/null; then exit 1; fi
+if env -u REEFADMIN_TEST_DATABASE_URL -u LOCO_ADMIN_TEST_DATABASE_URL bash scripts/coverage.sh check 2>/dev/null; then exit 1; fi
 [ ! -f target/coverage/complete ]
 for fault in unit postgres threshold; do
   : > calls

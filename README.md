@@ -22,11 +22,11 @@ Tested with PostgreSQL and SQLite. Uploads, editable inlines and many-to-many co
 
 Before you start, supply your application’s database connection, entity models, access policy, and session and CSRF middleware. The example below uses placeholders for these application components.
 
-Until the first crates.io release, use a local checkout. Replace the path with its location:
+Add ReefAdmin to your application:
 
 ```toml
 [dependencies]
-reefadmin = { path = "/path/to/checkout" }
+reefadmin = "0.1"
 ```
 
 Register an entity and mount the admin:
@@ -56,7 +56,7 @@ let protected = admin
 let router = router.nest("/admin", protected);
 ```
 
-`posts`, `MyPolicy`, `require_staff` and `require_csrf` are supplied by your application. The staff middleware must insert a trusted `AdminActor` request extension. Run session middleware before the staff check, and use the same mount prefix as `AdminApp`. In Loco, mount the router in an initializer using `ctx.db`.
+`posts`, `MyPolicy`, `require_staff` and `require_csrf` are supplied by your application. The staff middleware must insert a trusted `AdminActor` request extension. Run session middleware before the staff check, and use the same mount prefix as `AdminApp`. In Loco, mount the router in an initializer using `ctx.db`. The repository includes a runnable `examples/loco/` application with host login, CSRF protection, scoped inventory and integration tests. Its README has setup instructions.
 
 Your application owns accounts, policy decisions and CSRF protection. ReefAdmin requires a policy and enforces it for each operation and database row. See [permissions](docs/permissions.md) for the policy interface and an example.
 
@@ -82,10 +82,10 @@ The package and Rust import name are now `reefadmin`. Update the dependency and 
 
 ```toml
 [dependencies]
-loco-admin = { package = "reefadmin", path = "/path/to/checkout" }
+loco-admin = { package = "reefadmin", version = "0.1" }
 ```
 
-The `LOCO_ADMIN_TEST_DATABASE_URL` setting and `X-Loco-Admin-Fragment` response header retain their existing names for compatibility. The repository URL is unchanged.
+Use `REEFADMIN_TEST_DATABASE_URL` for the test database and `X-ReefAdmin-Fragment` for fragment responses. The previous `LOCO_ADMIN_TEST_DATABASE_URL` setting remains a fallback; the new setting takes precedence. Responses also include `X-Loco-Admin-Fragment` for older host scripts. The repository is now [gilesw/reefadmin](https://github.com/gilesw/reefadmin).
 
 Internal failures now return a generic HTTP 500 response and emit a `tracing` error event. Configure a subscriber in the host to collect diagnostics. Form validation still returns HTTP 422 with field errors. Custom actions should return `Ok(ActionResult::error(message))` for messages intended for users; returned `Err(...)` values are internal failures.
 
@@ -104,17 +104,23 @@ mise run check
 `check` runs formatting, workflow and dependency lint, Clippy, tests, rustdoc and package verification. To include PostgreSQL, create a disposable test database. Replace `YOUR_ROLE` with a PostgreSQL role that can create schemas in that database, then run:
 
 ```sh
-LOCO_ADMIN_TEST_DATABASE_URL=postgres://YOUR_ROLE@localhost/loco_admin_test \
+REEFADMIN_TEST_DATABASE_URL=postgres://YOUR_ROLE@localhost/reefadmin_test \
   mise run check:postgres
 ```
 
 PostgreSQL tests use isolated schemas and clean them up after success or assertion failures.
 
-For `mise run coverage:check`, set `LOCO_ADMIN_TEST_DATABASE_URL` again or export it in your shell. This command enforces at least 80% production Rust line coverage. See [testing](docs/testing.md) for reports, scope and optional mutation checks.
+For `mise run coverage:check`, set `REEFADMIN_TEST_DATABASE_URL` again or export it in your shell. This command enforces at least 80% production Rust line coverage. See [testing](docs/testing.md) for reports, scope and optional mutation checks.
 
 Browser checks: run `mise run browser:setup`, then `mise run test:browser`. Node and Chromium are development tools only.
 
-Use `mise tasks ls` for individual checks. Optional complexity reports are available through `mise run lint:metrics` and `mise run metrics:rust-code-analysis`.
+For the Loco consumer, run `mise run test:loco`, `mise run test:loco:browser` and `mise run test:loco:package`. With the disposable database configured, run `mise run test:loco:postgres` and `mise run coverage:loco`. The latter enforces a separate 80% gate for the example, including its executable.
+
+Local dependency, static and dynamic security checks are described in [security checks](docs/security.md). They require no hosted scanning account.
+
+Use `mise tasks ls` for individual checks. Optional Clippy complexity and size warnings are available through `mise run lint:metrics`.
+
+For release preparation, see [Releasing ReefAdmin](docs/releasing.md). `mise run release:check` runs the release gates and a publication dry run without uploading the crate.
 
 ## Origins and upstream contributions
 
