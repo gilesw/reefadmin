@@ -32,6 +32,8 @@ Unexpected database, template, observer and action failures return a generic HTT
 
 Field validation returns HTTP 422 with submitted values and field messages. Custom actions can return `Ok(ActionResult::error(message))` for an expected failure that users need to see. Treat those messages as public text. An `Err(AdminError)` is an internal failure, except `AccessDenied`, which returns HTTP 403.
 
+A host can classify add and change write errors with a `ValidationErrorMapper` registered through `.map_write_errors(mapper)`. The mapper receives the registered entity name and the `AdminError` from the write, which includes observer errors. It returns a map of form field names to messages, or `None` to keep the generic HTTP 500 response. A mapped error renders the form again with HTTP 422, the submitted values and the messages. The key `__all__` renders a form-level alert; messages for names that are not on the form are appended to that alert. The write and any observer changes are rolled back before the mapper runs. The library never inspects database error text itself. Delete and bulk actions do not use the mapper.
+
 ## Rendering and assets
 
 Templates and admin JavaScript are embedded in the crate. Tera 2 rendering is internal and does not dictate the host's template engine. Applications can configure title, mount prefix, site link, stylesheet, script, favicon and template overrides. Bootstrap and HTMX are bundled and served under the admin prefix. HTMX enhances list navigation, relationship lookup and inline toggles; full pages and ordinary form submissions remain available. See [template migration](templates.md) for overrides and engine configuration.

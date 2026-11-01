@@ -76,6 +76,8 @@ Register a `MutationObserver` with `.observe_mutations(observer)` to update deri
 
 Custom actions manage their own transactions and do not automatically invoke observers. Bulk deletion commits each row separately. See [architecture](docs/architecture.md) for callback details and side-effect handling.
 
+To show a failed add or change write as a form error, register a `ValidationErrorMapper` with `.map_write_errors(mapper)`. The mapper receives the entity name and the error and returns field messages, or `None` for an internal failure. Mapped errors render the form again with HTTP 422; the write is already rolled back. Use the key `__all__` for a form-level message. Treat returned messages as public text. See [architecture](docs/architecture.md#request-errors).
+
 ## Migration from loco-admin
 
 The package and Rust import name are now `reefadmin`. Update the dependency and change `use loco_admin::...` to `use reefadmin::...`. To keep existing imports, use a Cargo dependency alias:
@@ -87,7 +89,7 @@ loco-admin = { package = "reefadmin", version = "0.1" }
 
 Use `REEFADMIN_TEST_DATABASE_URL` for the test database and `X-ReefAdmin-Fragment` for fragment responses. The previous `LOCO_ADMIN_TEST_DATABASE_URL` setting remains a fallback; the new setting takes precedence. Responses also include `X-Loco-Admin-Fragment` for older host scripts. The repository is now [gilesw/reefadmin](https://github.com/gilesw/reefadmin).
 
-Internal failures now return a generic HTTP 500 response and emit a `tracing` error event. Configure a subscriber in the host to collect diagnostics. Form validation still returns HTTP 422 with field errors. Custom actions should return `Ok(ActionResult::error(message))` for messages intended for users; returned `Err(...)` values are internal failures.
+Internal failures now return a generic HTTP 500 response and emit a `tracing` error event. Configure a subscriber in the host to collect diagnostics. Form validation still returns HTTP 422 with field errors. Custom actions should return `Ok(ActionResult::error(message))` for messages intended for users; returned `Err(...)` values are internal failures. To show selected write errors to users, register a `ValidationErrorMapper` with `.map_write_errors(mapper)`.
 
 During 0.1.x, patch releases preserve the public Rust API. Breaking changes use a new 0.x minor version and include migration notes. Security fixes may change unsafe response behaviour.
 

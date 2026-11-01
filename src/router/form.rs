@@ -5,7 +5,7 @@ use super::{
     list::{find, id_of},
 };
 use crate::{
-    Operation,
+    AdminError, Operation,
     backend::{ColKind, ColumnMeta},
     entity::{EntityAdmin, Row},
     sql::{self, ListSpec},
@@ -490,6 +490,38 @@ fn object_label(entity: &EntityAdmin, row: &Row, id: &str) -> String {
         .unwrap_or_else(|| id.to_string())
 }
 
+/// Host-mapped write errors, with messages for names outside the form folded into `__all__`.
+fn mapped_write_errors(
+    state: &RequestState,
+    entity: &EntityAdmin,
+    mode: &Mode<'_>,
+    err: &AdminError,
+) -> Option<HashMap<String, String>> {
+    let mapped = state
+        .write_errors
+        .as_ref()?
+        .validation_errors(&entity.name, err)?;
+    let names: Vec<String> = layout(entity, mode)
+        .into_iter()
+        .flat_map(|(_, names)| names)
+        .collect();
+    let mut errors = HashMap::new();
+    let mut general = Vec::new();
+    for (name, message) in mapped {
+        if name == "__all__" {
+            general.insert(0, message);
+        } else if names.contains(&name) {
+            errors.insert(name, message);
+        } else {
+            general.push(message);
+        }
+    }
+    if !general.is_empty() {
+        errors.insert("__all__".to_string(), general.join(" "));
+    }
+    Some(errors)
+}
+
 /// Converts and validates submitted fields; returns column values or per-field errors.
 fn collect(
     entity: &EntityAdmin,
@@ -631,11 +663,7 @@ pub(super) async fn add_submit(
             ))
         }
         Err(err) => {
-            if let Some(errors) = state
-                .validation_errors
-                .as_ref()
-                .and_then(|mapper| mapper.validation_errors(&err))
-            {
+            if let Some(errors) = mapped_write_errors(&state, entity, &Mode::Add, &err) {
                 return render_form(
                     &state,
                     entity,
@@ -729,11 +757,7 @@ pub(super) async fn change_submit(
             )
             .await
         {
-            if let Some(errors) = state
-                .validation_errors
-                .as_ref()
-                .and_then(|mapper| mapper.validation_errors(&err))
-            {
+            if let Some(errors) = mapped_write_errors(&state, entity, &mode, &err) {
                 return render_form(
                     &state,
                     entity,

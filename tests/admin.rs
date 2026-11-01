@@ -680,23 +680,30 @@ async fn observer_failure_rolls_back_mutations_and_observer_writes() {
 }
 
 #[tokio::test]
-async fn host_mapped_model_write_errors_render_safe_validation_messages() {
-    use reefadmin::{AdminError, ValidationErrorMapper};
+async fn host_mapped_write_errors_render_public_messages_and_roll_back() {
+    use reefadmin::ValidationErrorMapper;
     use sea_orm::DbErr;
     use std::collections::HashMap;
 
     struct MapValidation;
     impl ValidationErrorMapper for MapValidation {
-        fn validation_errors(&self, error: &AdminError) -> Option<HashMap<String, String>> {
-            match error {
-                AdminError::Database(DbErr::Custom(message))
-                    if message.contains("invalid name") =>
-                {
-                    Some(HashMap::from([(
-                        "name".into(),
-                        "Enter an accepted name.".into(),
-                    )]))
-                }
+        fn validation_errors(
+            &self,
+            entity: &str,
+            error: &AdminError,
+        ) -> Option<HashMap<String, String>> {
+            let AdminError::Database(DbErr::Custom(message)) = error else {
+                return None;
+            };
+            match (entity, message.as_str()) {
+                ("exchanges", "invalid name") => Some(HashMap::from([(
+                    "name".to_string(),
+                    "Enter an accepted name.".to_string(),
+                )])),
+                ("exchanges", "unknown field") => Some(HashMap::from([
+                    ("__all__".to_string(), "Check the record.".to_string()),
+                    ("timezone".to_string(), "Set a timezone.".to_string()),
+                ])),
                 _ => None,
             }
         }
@@ -715,31 +722,98 @@ async fn host_mapped_model_write_errors_render_safe_validation_messages() {
         async fn after(
             &self,
             _db: &sea_orm::DatabaseTransaction,
-            _table: &str,
-            _row: &serde_json::Value,
+            table: &str,
+            row: &serde_json::Value,
             _captured: serde_json::Value,
         ) -> Result<(), DbErr> {
-            Err(DbErr::Custom("invalid name".into()))
+            Err(DbErr::Custom(match (table, row["name"].as_str()) {
+                ("accounts", _) | (_, Some("Bad")) => "invalid name".into(),
+                (_, Some("Unknown")) => "unknown field".into(),
+                _ => "database down".into(),
+            }))
         }
     }
     let db = database().await;
+    let exchanges = EntityAdmin::from_entity::<exchange::Entity>("exchanges")
+        .fields(["mic", "name", "country"]);
+    let accounts = EntityAdmin::from_entity::<account::Entity>("accounts").fields([
+        "username",
+        "account_type",
+        "is_staff",
+    ]);
     let app = Router::new().nest(
         "/admin",
         AdminApp::new(db.clone())
             .access_policy(common::TestPolicy)
             .observe_mutations(Reject)
-            .validation_errors(MapValidation)
-            .register(
-                EntityAdmin::from_entity::<exchange::Entity>("exchanges")
-                    .fields(["mic", "name", "country"]),
-            )
+            .map_write_errors(MapValidation)
+            .register(exchanges)
+            .register(accounts)
             .into_router()
             .unwrap(),
     );
+
     let response = post(&app, "/admin/exchanges/add", "mic=TEST&name=Bad&country=GB").await;
     assert_eq!(response.status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(response.body.contains("Enter an accepted name."));
+    assert!(response.body.contains(r#"value="TEST""#));
     assert!(!response.body.contains("invalid name"));
+    assert!(
+        exchange::Entity::find_by_id("TEST")
+            .one(&db)
+            .await
+            .unwrap()
+            .is_none()
+    );
+
+    let response = post(
+        &app,
+        "/admin/exchanges/XLON/change",
+        "mic=XLON&name=Bad&country=GB",
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(response.body.contains("Enter an accepted name."));
+    assert!(!response.body.contains("invalid name"));
+    let saved = exchange::Entity::find_by_id("XLON")
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(saved.name, "London Stock Exchange");
+
+    let response = post(
+        &app,
+        "/admin/exchanges/add",
+        "mic=TEST&name=Unknown&country=GB",
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(
+        response
+            .text()
+            .matches("Check the record. Set a timezone.")
+            .count(),
+        1
+    );
+
+    let response = post(
+        &app,
+        "/admin/exchanges/add",
+        "mic=TEST&name=Down&country=GB",
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(!response.body.contains("database down"));
+
+    let response = post(
+        &app,
+        "/admin/accounts/add",
+        "username=carol&account_type=free&is_staff=false",
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(!response.body.contains("Enter an accepted name."));
 }
 
 #[tokio::test]

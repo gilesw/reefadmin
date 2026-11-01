@@ -20,10 +20,18 @@ pub enum AdminError {
     Custom(String),
 }
 
-/// Host supplied mapping from a failed model write to safe form field messages.
-/// Return `None` for internal failures; they remain generic HTTP 500 responses.
+/// Host-supplied mapping from a failed add or change write to public form messages.
+///
+/// `entity` is the registered entity name. Keys are form field names; the key
+/// `__all__` renders as a form-level alert, and messages for names that are not
+/// on the form are appended to that alert. Return `None` for internal failures;
+/// they remain generic HTTP 500 responses.
 pub trait ValidationErrorMapper: Send + Sync {
-    fn validation_errors(&self, error: &AdminError) -> Option<HashMap<String, String>>;
+    fn validation_errors(
+        &self,
+        entity: &str,
+        error: &AdminError,
+    ) -> Option<HashMap<String, String>>;
 }
 
 impl AdminError {

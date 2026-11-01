@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add `ValidationErrorMapper` and `AdminApp::map_write_errors` so hosts can show selected add and change write errors, including observer errors, as HTTP 422 form messages. Unmapped errors remain generic HTTP 500 responses.
+
 ## 0.1.0 — 1 November 2026
 
 - Keep Clippy complexity checks advisory and remove the old rust-code-analysis task. Keep SAST and passive DAST optional; dependency auditing remains a release check. Add portable release verification and publication dry-run tasks.

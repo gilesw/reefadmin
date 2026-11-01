@@ -50,6 +50,8 @@ Unexpected request failures emit a `tracing` error event and return a generic HT
 
 Regression checks cover full pages and HTMX fragments, read/template failures, database constraints, custom actions and observer rollback. See the README for the response-behaviour migration.
 
+Hosts can register a `ValidationErrorMapper` to classify add and change write errors, including observer errors, as HTTP 422 form messages. The mapper receives the entity name and returns public messages; unmapped errors stay generic. Regression checks cover add, change, rollback, form-level messages and the generic fallback.
+
 ### Slice 7 — review documentation and interface language — implemented
 
 Review README, public Rust API documentation, guides in `docs/`, setup/migration instructions and user-facing labels, help text and errors. Use the [Google developer documentation style guide](https://developers.google.com/style) for software documentation and [ASD-STE100](https://www.asd-ste100.org/) principles for clear instructions. This is an editorial review, not a claim of formal ASD-STE100 compliance.
@@ -238,7 +240,7 @@ The actor/policy slice is implemented and tested. Domain-operation adapters, aud
 - Actor and request context for actions, policies and audit hooks without assuming a user model.
 - Per-entity, per-operation and per-record authorization, including query scoping for lists, detail, autocomplete, inlines, exports and bulk actions.
 - Server-enforced editable-field allowlists and protection for sensitive/read-only fields.
-- Custom create/update/delete operations calling application domain functions, with transaction access and structured validation errors.
+- Custom create/update/delete operations calling application domain functions, with transaction access. Structured validation errors for add and change are available through `ValidationErrorMapper`.
 - Documented mutation observer semantics and an explicit boundary for external side effects.
 - Audit hooks with actor, operation, record identity and appropriate before/after values; hosts choose storage and redaction.
 - Custom widgets covering rendering, parsing, validation and required assets.

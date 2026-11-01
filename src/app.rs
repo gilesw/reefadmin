@@ -29,7 +29,7 @@ pub struct AdminApp {
     template_engine: Tera,
     observer: Option<Arc<dyn MutationObserver>>,
     policy: Option<Arc<dyn AccessPolicy>>,
-    validation_errors: Option<Arc<dyn ValidationErrorMapper>>,
+    write_errors: Option<Arc<dyn ValidationErrorMapper>>,
 }
 
 pub(crate) struct AdminState {
@@ -46,7 +46,7 @@ pub(crate) struct AdminState {
     pub renderer: Renderer,
     pub observer: Option<Arc<dyn MutationObserver>>,
     pub policy: Arc<dyn AccessPolicy>,
-    pub validation_errors: Option<Arc<dyn ValidationErrorMapper>>,
+    pub write_errors: Option<Arc<dyn ValidationErrorMapper>>,
 }
 
 #[derive(Serialize)]
@@ -143,7 +143,7 @@ impl AdminApp {
             template_engine: Tera::new(),
             observer: None,
             policy: None,
-            validation_errors: None,
+            write_errors: None,
         }
     }
 
@@ -153,10 +153,10 @@ impl AdminApp {
         self
     }
 
-    /// Maps selected model write errors to safe field-level form messages.
+    /// Maps selected add and change write errors to public form messages (HTTP 422).
     /// Unmapped errors remain generic internal failures.
-    pub fn validation_errors(mut self, mapper: impl ValidationErrorMapper + 'static) -> Self {
-        self.validation_errors = Some(Arc::new(mapper));
+    pub fn map_write_errors(mut self, mapper: impl ValidationErrorMapper + 'static) -> Self {
+        self.write_errors = Some(Arc::new(mapper));
         self
     }
 
@@ -243,7 +243,7 @@ impl AdminApp {
         let urls = Urls::new(&self.prefix);
         let state = Arc::new(AdminState {
             policy,
-            validation_errors: self.validation_errors,
+            write_errors: self.write_errors,
             observer: self.observer,
             title: self.title,
             site_url: self.site_url,
