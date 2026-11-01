@@ -1,4 +1,5 @@
 use sea_orm::DbErr;
+use std::collections::HashMap;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -17,6 +18,12 @@ pub enum AdminError {
 
     #[error("{0}")]
     Custom(String),
+}
+
+/// Host supplied mapping from a failed model write to safe form field messages.
+/// Return `None` for internal failures; they remain generic HTTP 500 responses.
+pub trait ValidationErrorMapper: Send + Sync {
+    fn validation_errors(&self, error: &AdminError) -> Option<HashMap<String, String>>;
 }
 
 impl AdminError {

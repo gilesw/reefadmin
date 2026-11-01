@@ -22,6 +22,7 @@ pub use action::{Action, ActionContext, ActionResult};
 pub use app::AdminApp;
 pub use entity::{EntityAdmin, Inline, Row};
 pub use error::AdminError;
+pub use error::ValidationErrorMapper;
 pub use validator::{
     EmailFormat, MaxLength, MaxValue, MinLength, MinValue, RegexValidator, Required, Validator,
 };

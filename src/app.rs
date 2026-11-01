@@ -1,5 +1,5 @@
 use crate::{
-    AccessEntity, AccessPolicy, AdminActor, MutationObserver, Operation,
+    AccessEntity, AccessPolicy, AdminActor, MutationObserver, Operation, ValidationErrorMapper,
     backend::ColKind,
     entity::{Computed, EntityAdmin},
     error::AdminError,
@@ -29,6 +29,7 @@ pub struct AdminApp {
     template_engine: Tera,
     observer: Option<Arc<dyn MutationObserver>>,
     policy: Option<Arc<dyn AccessPolicy>>,
+    validation_errors: Option<Arc<dyn ValidationErrorMapper>>,
 }
 
 pub(crate) struct AdminState {
@@ -45,6 +46,7 @@ pub(crate) struct AdminState {
     pub renderer: Renderer,
     pub observer: Option<Arc<dyn MutationObserver>>,
     pub policy: Arc<dyn AccessPolicy>,
+    pub validation_errors: Option<Arc<dyn ValidationErrorMapper>>,
 }
 
 #[derive(Serialize)]
@@ -141,12 +143,20 @@ impl AdminApp {
             template_engine: Tera::new(),
             observer: None,
             policy: None,
+            validation_errors: None,
         }
     }
 
     /// Required policy. Missing actors and default policy methods deny access.
     pub fn access_policy(mut self, policy: impl AccessPolicy + 'static) -> Self {
         self.policy = Some(Arc::new(policy));
+        self
+    }
+
+    /// Maps selected model write errors to safe field-level form messages.
+    /// Unmapped errors remain generic internal failures.
+    pub fn validation_errors(mut self, mapper: impl ValidationErrorMapper + 'static) -> Self {
+        self.validation_errors = Some(Arc::new(mapper));
         self
     }
 
@@ -233,6 +243,7 @@ impl AdminApp {
         let urls = Urls::new(&self.prefix);
         let state = Arc::new(AdminState {
             policy,
+            validation_errors: self.validation_errors,
             observer: self.observer,
             title: self.title,
             site_url: self.site_url,

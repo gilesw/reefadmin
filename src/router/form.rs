@@ -630,7 +630,25 @@ pub(super) async fn add_submit(
                 "added",
             ))
         }
-        Err(err) => Err(err.into()),
+        Err(err) => {
+            if let Some(errors) = state
+                .validation_errors
+                .as_ref()
+                .and_then(|mapper| mapper.validation_errors(&err))
+            {
+                return render_form(
+                    &state,
+                    entity,
+                    Mode::Add,
+                    &form,
+                    &errors,
+                    None,
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                )
+                .await;
+            }
+            Err(err.into())
+        }
     }
 }
 
@@ -711,6 +729,22 @@ pub(super) async fn change_submit(
             )
             .await
         {
+            if let Some(errors) = state
+                .validation_errors
+                .as_ref()
+                .and_then(|mapper| mapper.validation_errors(&err))
+            {
+                return render_form(
+                    &state,
+                    entity,
+                    mode,
+                    &form,
+                    &errors,
+                    None,
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                )
+                .await;
+            }
             return Err(err.into());
         }
     }

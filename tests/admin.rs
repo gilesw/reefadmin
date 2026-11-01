@@ -680,6 +680,69 @@ async fn observer_failure_rolls_back_mutations_and_observer_writes() {
 }
 
 #[tokio::test]
+async fn host_mapped_model_write_errors_render_safe_validation_messages() {
+    use reefadmin::{AdminError, ValidationErrorMapper};
+    use sea_orm::DbErr;
+    use std::collections::HashMap;
+
+    struct MapValidation;
+    impl ValidationErrorMapper for MapValidation {
+        fn validation_errors(&self, error: &AdminError) -> Option<HashMap<String, String>> {
+            match error {
+                AdminError::Database(DbErr::Custom(message))
+                    if message.contains("invalid name") =>
+                {
+                    Some(HashMap::from([(
+                        "name".into(),
+                        "Enter an accepted name.".into(),
+                    )]))
+                }
+                _ => None,
+            }
+        }
+    }
+    struct Reject;
+    #[async_trait::async_trait]
+    impl reefadmin::MutationObserver for Reject {
+        async fn before(
+            &self,
+            _db: &sea_orm::DatabaseTransaction,
+            _table: &str,
+            row: &serde_json::Value,
+        ) -> Result<serde_json::Value, DbErr> {
+            Ok(row.clone())
+        }
+        async fn after(
+            &self,
+            _db: &sea_orm::DatabaseTransaction,
+            _table: &str,
+            _row: &serde_json::Value,
+            _captured: serde_json::Value,
+        ) -> Result<(), DbErr> {
+            Err(DbErr::Custom("invalid name".into()))
+        }
+    }
+    let db = database().await;
+    let app = Router::new().nest(
+        "/admin",
+        AdminApp::new(db.clone())
+            .access_policy(common::TestPolicy)
+            .observe_mutations(Reject)
+            .validation_errors(MapValidation)
+            .register(
+                EntityAdmin::from_entity::<exchange::Entity>("exchanges")
+                    .fields(["mic", "name", "country"]),
+            )
+            .into_router()
+            .unwrap(),
+    );
+    let response = post(&app, "/admin/exchanges/add", "mic=TEST&name=Bad&country=GB").await;
+    assert_eq!(response.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(response.body.contains("Enter an accepted name."));
+    assert!(!response.body.contains("invalid name"));
+}
+
+#[tokio::test]
 async fn truncated_foreign_key_selects_keep_current_and_submitted_relations() {
     use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
 
