@@ -1,0 +1,11 @@
+    {% if pages > 1 %}
+    <nav class="mt-3" aria-label="Pages">
+      <ul class="pagination pagination-sm flex-wrap">
+        <li class="page-item{% if not prev_url %} disabled{% endif %}"><a class="page-link"{% if prev_url %} hx-get="{{ prev_url }}"{% else %} tabindex="-1" aria-disabled="true"{% endif %} href="{% if prev_url %}{{ prev_url }}{% else %}{{ '#' }}{% endif %}">Previous</a></li>
+        {% for link in page_links %}
+        <li class="page-item{% if link.active %} active{% endif %}"><a class="page-link" href="{{ link.url }}" hx-get="{{ link.url }}"{% if link.active %} aria-current="page"{% endif %}>{{ link.number }}</a></li>
+        {% endfor %}
+        <li class="page-item{% if not next_url %} disabled{% endif %}"><a class="page-link"{% if next_url %} hx-get="{{ next_url }}"{% else %} tabindex="-1" aria-disabled="true"{% endif %} href="{% if next_url %}{{ next_url }}{% else %}{{ '#' }}{% endif %}">Next</a></li>
+      </ul>
+    </nav>
+    {% endif %}

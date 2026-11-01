@@ -1,0 +1,108 @@
+# Keep the Rust version aligned with rust-toolchain.toml and Cargo.toml.
+[tools]
+actionlint = "1.7.12"
+rust = { version = "1.98.1", components = "clippy,rustfmt,llvm-tools-preview" }
+"github:bnjbvr/cargo-machete" = "0.9.2"
+"cargo:cargo-llvm-cov" = "0.9.1"
+
+[tasks.setup]
+description = "Install pinned contributor tools"
+run = "mise install"
+
+[tasks.build]
+description = "Build the locked crate"
+run = "cargo build --locked"
+
+[tasks.fmt]
+description = "Format Rust source (the only check task that rewrites source)"
+run = "cargo fmt --all"
+
+[tasks."fmt:check"]
+description = "Check Rust formatting without changing files"
+run = "cargo fmt --all -- --check"
+
+[tasks.lint]
+description = "Clippy on all targets with warnings denied"
+run = "cargo clippy --all-targets --locked -- -D warnings"
+
+[tasks."lint:actions"]
+description = "Lint GitHub Actions workflows"
+run = "actionlint"
+
+[tasks."lint:deps"]
+description = "Detect unused dependencies"
+run = "cargo machete"
+
+[tasks."lint:metrics"]
+description = "Report complexity and size findings; not a merge gate"
+run = "cargo clippy --all-targets --locked -- -W clippy::cognitive_complexity -W clippy::too_many_lines -W clippy::too_many_arguments -W clippy::excessive_nesting -W clippy::type_complexity -W clippy::fn_params_excessive_bools"
+
+[tasks."metrics:rust-code-analysis"]
+description = "Export Rust source metrics under target/rust-code-analysis"
+tools = { "cargo:rust-code-analysis-cli" = "0.0.25" }
+run = "mkdir -p target/rust-code-analysis && rust-code-analysis-cli --metrics --paths src --include '**/*.rs' --output-format json --output target/rust-code-analysis"
+
+[tasks.test]
+description = "Unit and SQLite request tests (no external database required)"
+run = "cargo test --locked"
+
+[tasks."test:postgres"]
+description = "PostgreSQL integration test; requires LOCO_ADMIN_TEST_DATABASE_URL"
+run = "cargo test --locked --test postgres -- --ignored"
+
+[tasks.doc]
+description = "Build public API documentation with warnings denied"
+env = { RUSTDOCFLAGS = "-D warnings" }
+run = "cargo doc --no-deps --locked"
+
+[tasks."package:check"]
+description = "Build and verify the crate archive without publishing (allows local edits)"
+run = "cargo package --locked --allow-dirty"
+
+[tasks."check:fast"]
+description = "Read-only formatting, workflow and dependency checks"
+run = ["mise run fmt:check", "mise run lint:actions", "mise run lint:deps", "mise run lint:scripts", "mise run test:coverage-runner"]
+
+[tasks.check]
+description = "Local merge gate; run test:postgres as well when PostgreSQL is available"
+run = ["mise run check:fast", "mise run build", "mise run lint", "mise run test", "mise run doc", "mise run package:check"]
+
+[tasks."check:postgres"]
+description = "Complete merge gate including PostgreSQL; requires LOCO_ADMIN_TEST_DATABASE_URL"
+run = ["mise run check", "mise run test:postgres"]
+
+[tasks."browser:setup"]
+description = "Install locked browser-test dependencies and Chromium"
+tools = { node = "24.15.0" }
+run = ["npm ci --ignore-scripts", "npx playwright install --with-deps chromium"]
+
+[tasks."test:browser"]
+description = "Browser smoke tests against a protected loopback fixture"
+tools = { node = "24.15.0" }
+run = "npm test"
+
+[tasks.coverage]
+description = "Measure combined unit, SQLite and PostgreSQL production coverage"
+run = "bash scripts/coverage.sh run"
+
+[tasks."coverage:check"]
+description = "Fail below 80% combined production Rust line coverage"
+run = "bash scripts/coverage.sh check"
+
+[tasks."coverage:html"]
+description = "Render the last successful coverage run without rerunning tests"
+run = "bash scripts/coverage.sh html"
+
+[tasks."test:coverage-runner"]
+description = "Check coverage runner failure propagation and report freshness"
+run = "bash scripts/tests/coverage.sh"
+
+[tasks."lint:scripts"]
+description = "Lint coverage runner scripts"
+tools = { shellcheck = "0.11.0" }
+run = "shellcheck scripts/coverage.sh scripts/tests/coverage.sh"
+
+[tasks."test:mutants"]
+description = "Advisory mutation checks for boolean parsing, truncation, length and pagination"
+tools = { "cargo:cargo-mutants" = "27.1.0" }
+run = "cargo mutants -f src/values.rs -f src/validator.rs -f src/urls.rs -F 'parse_bool|truncate|MinLength|with_page' --cargo-arg=--locked --cargo-test-arg=--lib --timeout 60 --build-timeout 300 --jobs 2 --output target/mutation"

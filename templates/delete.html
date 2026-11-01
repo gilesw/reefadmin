@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}Delete {{ singular }} · {{ admin_title }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ home_url }}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{{ list_url }}">{{ entity_label }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ change_url }}">{{ object_label }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Delete</li>
+  </ol>
+</nav>
+<h1 class="h3 mb-3">Delete {{ singular }}</h1>
+<p>Are you sure you want to delete the {{ singular }} “{{ object_label }}”? This cannot be undone.</p>
+<form method="post" action="{{ action }}" class="d-flex gap-2">
+  {% include "csrf.html" %}
+  <button class="btn btn-danger" type="submit">Delete</button>
+  <a class="btn btn-outline-secondary" href="{{ change_url }}">Cancel</a>
+</form>
+{% endblock %}

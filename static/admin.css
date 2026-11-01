@@ -1,0 +1,9 @@
+:root { --admin-cell-space: .25rem; --admin-sidebar-space: .75rem; }
+.admin-sidebar .list-group-item { border: 0; padding: .35rem var(--admin-sidebar-space); }
+    .admin-table td, .admin-table th { white-space: nowrap; }
+    .admin-table td.admin-wrap { white-space: normal; }
+    .admin-filter .list-group-item { border: 0; padding: .2rem .75rem; }
+.admin-table td, .admin-table th { padding: var(--admin-cell-space); }
+
+.htmx-indicator { opacity: 0; }
+.htmx-request.htmx-indicator, .htmx-request .htmx-indicator { opacity: 1; }

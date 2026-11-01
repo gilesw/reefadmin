@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1 class="h3 mb-4">Site administration</h1>
+<div class="row g-3">
+  {% for group in nav %}
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header fw-semibold">{% if group.label %}{{ group.label }}{% else %}{{ "General" }}{% endif %}</div>
+      <ul class="list-group list-group-flush">
+        {% for item in group.entities %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="{{ item.url }}">{{ item.label }}</a>
+          {% if item.add_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ item.add_url }}">Add</a>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-body-secondary">No sections are available to you.</p>
+  {% endfor %}
+</div>
+{% endblock %}

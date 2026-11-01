@@ -1,0 +1,23 @@
+{% component admin_cell(cell) -%}
+{%- if cell.flag == true -%}<span class="badge text-bg-success">Yes</span>
+{%- elif cell.flag == false -%}<span class="badge text-bg-secondary">No</span>
+{%- elif cell.text == "" -%}<span class="text-body-secondary">–</span>
+{%- elif cell.url -%}<a href="{{ cell.url }}">{{ cell.text }}</a>
+{%- else -%}{{ cell.text }}
+{%- endif -%}
+{%- endcomponent %}
+
+{% component admin_row(row) -%}
+{%- for cell in row.cells -%}
+<td{% if loop.first %} class="fw-semibold"{% endif %}>
+  {%- if loop.first and row.change_url and not cell.url and cell.flag == none -%}
+  <a href="{{ row.change_url }}">{% if cell.text %}{{ cell.text }}{% else %}{{ row.id }}{% endif %}</a>
+  {%- else -%}
+  {{ <admin_cell cell={cell} /> }}
+  {%- endif -%}
+  {%- if cell.toggle_url %}
+  <button id="admin-toggle-{{ row.id }}-{{ loop.index }}" type="submit" form="admin-toggle" formaction="{{ cell.toggle_url }}" hx-post="{{ cell.toggle_url }}" hx-target="closest tr" hx-swap="outerHTML" hx-push-url="false" hx-include="#admin-toggle" hx-disabled-elt="this" hx-sync="this:drop" class="btn btn-link btn-sm p-0 ms-1 align-baseline">{{ "Turn off" if cell.flag else "Turn on" }}</button>
+  {%- endif -%}
+</td>
+{%- endfor -%}
+{%- endcomponent %}

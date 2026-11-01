@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"historyCacheSize":0,"historyRestoreAsHxRequest":false,"allowScriptTags":false,"allowEval":false}'>
+  <title>{% block title %}{{ admin_title }}{% endblock %}</title>
+  {% if favicon_url %}<link rel="icon" type="image/svg+xml" href="{{ favicon_url }}">{% endif %}
+  <link rel="stylesheet" href="{{ css_url }}">
+  <link rel="stylesheet" href="{{ admin_css_url }}">
+  {% for url in extra_stylesheets %}<link rel="stylesheet" href="{{ url }}">{% endfor %}
+  {% block styles %}{% endblock %}
+</head>
+<body class="bg-body-tertiary">
+  <nav class="navbar navbar-expand bg-dark border-bottom" data-bs-theme="dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{{ home_url }}">{{ admin_title }}</a>
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="{{ site_url }}">View site</a>
+      </div>
+    </div>
+  </nav>
+  <div class="container-fluid">
+    <div class="row">
+      <aside class="col-md-3 col-xl-2 py-3 bg-body border-end admin-sidebar">
+        {% for group in nav %}
+        <div class="mb-3">
+          {% if group.label %}<div class="small text-uppercase text-body-secondary fw-semibold px-2 mb-1">{{ group.label }}</div>{% endif %}
+          <div class="list-group list-group-flush">
+            {% for item in group.entities %}
+            <a class="list-group-item list-group-item-action rounded{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </aside>
+      <main class="col-md-9 col-xl-10 py-3">
+        <div id="admin-request-error" class="alert alert-danger" role="alert" tabindex="-1" hidden>Request failed. Please <button type="button" class="btn btn-link p-0 align-baseline" data-admin-reload>reload the page</button> and try again.</div>
+        <div id="admin-status" class="visually-hidden" role="status" aria-live="polite"></div>
+        {% block notices %}{% include "notices.html" %}{% endblock %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <script src="{{ js_url }}"></script>
+  <script src="{{ htmx_url }}"></script>
+  <script src="{{ admin_js_url }}"></script>
+  {% for url in extra_scripts %}<script src="{{ url }}"></script>{% endfor %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }} · {{ admin_title }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ home_url }}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{{ list_url }}">{{ entity_label }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if object_label %}{{ object_label }}{% else %}{{ title }}{% endif %}</li>
+  </ol>
+</nav>
+<h1 class="h3 mb-3">{{ title }}{% if object_label %} <span class="text-body-secondary fw-normal">{{ object_label }}</span>{% endif %}</h1>
+
+{% if form_error %}<div class="alert alert-danger" role="alert">{{ form_error }}</div>{% endif %}
+
+<form method="post" action="{{ action }}" novalidate>
+  {% include "csrf.html" %}
+  {% for fieldset in fieldsets %}
+  <fieldset class="card mb-3">
+    {% if fieldset.title %}<legend class="card-header h6 mb-0">{{ fieldset.title }}</legend>{% endif %}
+    <div class="card-body">
+      {% for field in fieldset.fields %}
+      <div class="row mb-3">
+        {% set input_id = "id_" ~ field.name %}
+        {% if field.widget == "checkbox" %}
+        <div class="col-md-9 offset-md-3">
+          <div class="form-check form-switch">
+            <input type="hidden" name="{{ field.name }}" value="false">
+            <input class="form-check-input{% if field.error %} is-invalid{% endif %}" type="checkbox" role="switch" id="{{ input_id }}" name="{{ field.name }}" value="true"{% if field.checked %} checked{% endif %}>
+            <label class="form-check-label" for="{{ input_id }}">{{ field.label }}</label>
+            {% if field.error %}<div class="invalid-feedback">{{ field.error }}</div>{% endif %}
+          </div>
+          {% if field.help %}<div class="form-text">{{ field.help }}</div>{% endif %}
+        </div>
+        {% else %}
+        <label class="col-md-3 col-form-label{% if field.required %} fw-semibold{% endif %}" for="{{ input_id }}">{{ field.label }}</label>
+        <div class="col-md-9">
+          {% if field.widget == "readonly" %}
+          <div class="form-control-plaintext" id="{{ input_id }}">
+            {% if field.display == "" %}<span class="text-body-secondary">–</span>
+            {% elif field.display_url %}<a href="{{ field.display_url }}">{{ field.display }}</a>
+            {% else %}<span style="white-space: pre-wrap">{{ field.display }}</span>{% endif %}
+          </div>
+          {% elif field.widget == "select" %}
+          <select class="form-select{% if field.error %} is-invalid{% endif %}" id="{{ input_id }}" name="{{ field.name }}"{% if field.required %} required{% endif %}>
+            {% for option in field.options %}
+            <option value="{{ option[0] }}"{% if option[0] == field.value %} selected{% endif %}>{{ option[1] }}</option>
+            {% endfor %}
+          </select>
+          {% elif field.widget == "autocomplete" %}
+          <input class="form-control{% if field.error %} is-invalid{% endif %}" type="text" id="{{ input_id }}" name="{{ field.name }}" value="{{ field.value }}" list="{{ input_id }}_options" autocomplete="off" data-admin-autocomplete="{{ field.autocomplete_url }}" hx-get="{{ field.autocomplete_url }}" hx-trigger="input changed delay:250ms" hx-params="q" hx-target="#{{ input_id }}_options" hx-swap="innerHTML" hx-sync="this:replace" aria-describedby="{{ input_id }}_help" placeholder="Type to search"{% if field.required %} required{% endif %}>
+          <datalist id="{{ input_id }}_options">{% if field.value %}<option value="{{ field.value }}" label="{{ field.display }}">{{ field.display }}</option>{% endif %}</datalist>
+          <div class="form-text" id="{{ input_id }}_help">Choose a search result or enter the related record’s ID.</div>
+          {% if field.display %}<div class="form-text">Currently: {% if field.display_url %}<a href="{{ field.display_url }}">{{ field.display }}</a>{% else %}{{ field.display }}{% endif %}</div>{% endif %}
+          {% elif field.widget == "textarea" or field.widget == "json" %}
+          <textarea class="form-control{% if field.widget == 'json' %} font-monospace{% endif %}{% if field.error %} is-invalid{% endif %}" id="{{ input_id }}" name="{{ field.name }}" rows="{{ 8 if field.widget == 'json' else 4 }}">{{ field.value }}</textarea>
+          {% else %}
+          <input class="form-control{% if field.error %} is-invalid{% endif %}" type="{{ field.widget }}" id="{{ input_id }}" name="{{ field.name }}" value="{{ field.value }}"{% if field.step %} step="{{ field.step }}"{% endif %}{% if field.required %} required{% endif %}>
+          {% endif %}
+          {% if field.error %}<div class="invalid-feedback d-block">{{ field.error }}</div>{% endif %}
+          {% if field.help %}<div class="form-text">{{ field.help }}</div>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endfor %}
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    {% if can_save %}
+    <button class="btn btn-primary" type="submit" name="_save" value="1">Save</button>
+    <button class="btn btn-outline-secondary" type="submit" name="_continue" value="1">Save and continue editing</button>
+    {% if can_add_another %}<button class="btn btn-outline-secondary" type="submit" name="_addanother" value="1">Save and add another</button>{% endif %}
+    {% endif %}
+    <a class="btn btn-link" href="{{ list_url }}">Back to {{ entity_label|lower }}</a>
+    {% if delete_url %}<a class="btn btn-outline-danger ms-auto" href="{{ delete_url }}">Delete</a>{% endif %}
+  </div>
+</form>
+
+{% for inline in inlines %}
+<section class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h2 class="h6 mb-0">{{ inline.label }} <span class="badge text-bg-light">{{ inline.total }}</span></h2>
+    <div class="d-flex gap-2">
+      {% if inline.add_url %}<a class="btn btn-sm btn-outline-primary" href="{{ inline.add_url }}">Add</a>{% endif %}
+      <a class="btn btn-sm btn-outline-secondary" href="{{ inline.list_url }}">View all</a>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0 admin-table">
+      <thead class="table-light"><tr>{% for header in inline.headers %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for row in inline.rows %}
+        <tr>{{ <admin_row row={row} /> }}</tr>
+        {% else %}
+        <tr><td colspan="{{ inline.headers|length }}" class="text-body-secondary">None yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

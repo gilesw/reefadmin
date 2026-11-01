@@ -1,0 +1,79 @@
+<section id="admin-results" tabindex="-1" aria-label="Results" hx-target="#admin-results" hx-swap="outerHTML" hx-push-url="true" hx-sync="#admin-results:replace" hx-indicator="#admin-loading">
+{% include "notices.html" %}
+<p id="admin-loading" class="htmx-indicator small" role="status">Loading…</p>
+<p class="small text-body-secondary">Changing the search, filters, sort order or page clears the selected rows.</p>
+<div class="row g-3">
+  <div class="{% if filters %}col-lg-9{% else %}col-12{% endif %}">
+    {% if searchable %}
+    <form class="d-flex gap-2 mb-3" method="get" action="{{ list_url }}" role="search" hx-get="{{ list_url }}" hx-trigger="submit, input changed delay:300ms">
+      {% for pair in search_hidden %}<input type="hidden" name="{{ pair[0] }}" value="{{ pair[1] }}">{% endfor %}
+      <input class="form-control" type="search" id="admin-search" name="q" value="{{ search }}" placeholder="Search" aria-label="Search">
+      <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </form>
+    {% endif %}
+
+    <form id="admin-toggle" method="post" class="d-none">{% include "csrf.html" %}<input type="hidden" name="q" value="{{ query }}"></form>
+
+    <form method="post" action="{{ list_url }}" data-admin-actions>
+      {% include "csrf.html" %}<input type="hidden" name="q" value="{{ query }}">
+      {% if actions %}
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <label class="visually-hidden" for="admin-action">Action</label>
+        <select class="form-select form-select-sm w-auto" id="admin-action" name="action">
+          {% for action in actions %}
+          <option value="{{ action.value }}"{% if action.confirm %} data-confirm="{{ action.confirm }}"{% endif %}>{{ action.label }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Run action</button>
+        <span class="small text-body-secondary">{{ total }} result{{ "" if total == 1 else "s" }}</span>
+      </div>
+      {% else %}
+      <p class="small text-body-secondary mb-2">{{ total }} result{{ "" if total == 1 else "s" }}</p>
+      {% endif %}
+
+      <div class="table-responsive bg-body border rounded">
+        <table class="table table-hover table-sm align-middle mb-0 admin-table">
+          <thead class="table-light">
+            <tr>
+              {% if selectable %}<th scope="col" style="width: 2rem"><input class="form-check-input" type="checkbox" data-admin-select-all aria-label="Select all rows"></th>{% endif %}
+              {% for header in headers %}
+              <th scope="col">
+                {% if header.sort_url %}<a class="link-body-emphasis text-decoration-none" href="{{ header.sort_url }}" hx-get="{{ header.sort_url }}">{{ header.label }}{% if header.sorted == "asc" %} ▲{% elif header.sorted == "desc" %} ▼{% endif %}</a>
+                {% else %}{{ header.label }}{% endif %}
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            {% include "row.html" %}
+            {% else %}
+            <tr><td colspan="{{ headers|length + 1 }}" class="text-center text-body-secondary py-4">No {{ entity_label|lower }} found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+
+    {% include "pagination.html" %}
+  </div>
+
+  {% if filters %}
+  <div class="col-lg-3">
+    <div class="card admin-filter">
+      <div class="card-header fw-semibold">Filter</div>
+      <div class="card-body p-2">
+        {% for filter in filters %}
+        <h2 class="h6 mt-2 px-2">By {{ filter.title|lower }}</h2>
+        <div class="list-group list-group-flush mb-2">
+          {% for option in filter.options %}
+          <a class="list-group-item list-group-item-action{% if option.active %} active{% endif %}" hx-get="{{ option.url }}" href="{{ option.url }}">{{ option.label }}</a>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+</section>

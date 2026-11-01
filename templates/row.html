@@ -1,0 +1,4 @@
+<tr>
+              {% if selectable %}<td><input class="form-check-input" type="checkbox" name="selected" value="{{ row.id }}" aria-label="Select row"></td>{% endif %}
+              {{ <admin_row row={row} /> }}
+            </tr>
