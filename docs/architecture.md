@@ -1,12 +1,12 @@
 # Architecture and origin
 
-Loco Admin is a server-rendered administration library for Loco applications, built on SeaORM and Axum. Applications register entities through `EntityAdmin`, configure an `AdminApp`, and mount the resulting router behind their existing access controls. Loco integration uses the same Axum router; the library does not depend on Loco.
+ReefAdmin is a server-rendered administration library for Axum and SeaORM, with Loco integration. Applications register entities through `EntityAdmin`, configure an `AdminApp`, and mount the resulting router behind their existing access controls. Loco integration uses the same Axum router; the library does not depend on Loco.
 
 ## Origin
 
-Loco Admin is adapted from axum-admin v0.1.1, commit `01dae80fb35270612d1f217b41383a0ceaeefe4e`. It retains the builder and entity-registration design, bulk-action model, CSV export and validators. Routing, templates, form handling and the SeaORM adapter have been substantially revised. It targets Axum 0.8 and SeaORM 2.
+ReefAdmin is adapted from axum-admin v0.1.1, commit `01dae80fb35270612d1f217b41383a0ceaeefe4e`. It retains the builder and entity-registration design, bulk-action model, CSV export and validators. Routing, templates, form handling and the SeaORM adapter have been substantially revised. It targets Axum 0.8 and SeaORM 2.
 
-Loco Admin contains adapted source; it does not depend on the axum-admin crate. There is no automatic upstream synchronisation or claimed upstream affiliation. Preserve the upstream MIT copyright notice and terms when distributing the library.
+ReefAdmin contains adapted source; it does not depend on the axum-admin crate. There is no automatic upstream synchronisation or claimed upstream affiliation. Preserve the upstream MIT copyright notice and terms when distributing the library.
 
 ## Application boundary
 
@@ -25,6 +25,12 @@ A database rollback cannot undo an email or an external API call. Send these aft
 Custom actions own their transactions and do not automatically invoke observers. Bulk selections are authorized before execution. Bulk deletion commits one row at a time; a later failure does not roll back earlier rows.
 
 PostgreSQL arrays use JSON-array form input. Numeric comparison parameters preserve the column's integer/float width. Foreign-key selects retain the saved or submitted value even when it falls outside the first page of options.
+
+## Request errors
+
+Unexpected database, template, observer and action failures return a generic HTTP 500 response. Diagnostics are emitted through `tracing`; configure a subscriber in the host application. These errors do not expose their details in HTML or HTMX responses.
+
+Field validation returns HTTP 422 with submitted values and field messages. Custom actions can return `Ok(ActionResult::error(message))` for an expected failure that users need to see. Treat those messages as public text. An `Err(AdminError)` is an internal failure, except `AccessDenied`, which returns HTTP 403.
 
 ## Rendering and assets
 

@@ -569,7 +569,7 @@ pub(super) async fn bulk_action(
         Ok(ActionResult::Redirect(path)) => {
             return Ok(Redirect::to(&state.urls.path(&path)).into_response());
         }
-        Err(err) => Flash::error(err.to_string()),
+        Err(err) => return Err(err.into()),
     };
     render_list(&state, entity, params, Some(flash), false).await
 }

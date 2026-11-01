@@ -1,6 +1,6 @@
-# Working on Loco Admin
+# Working on ReefAdmin
 
-Loco Admin targets Loco applications and is built on SeaORM and Axum. Keep the core usable as an Axum router without requiring a Loco dependency.
+ReefAdmin targets Loco applications and is built on SeaORM and Axum. Keep the core usable as an Axum router without requiring a Loco dependency.
 
 Preserve application-owned authentication, authorization and domain operations. Do not add a second login system. Never present an unprotected admin mount as a production integration example.
 

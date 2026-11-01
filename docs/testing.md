@@ -1,6 +1,6 @@
 # Testing
 
-Loco Admin requires at least **80% production Rust line coverage** from the combined unit, SQLite and PostgreSQL tests. Browser behaviour and authorization boundaries also need explicit tests; the percentage does not measure those guarantees.
+ReefAdmin requires at least **80% production Rust line coverage** from the combined unit, SQLite and PostgreSQL tests. Browser behaviour and authorization boundaries also need explicit tests; the percentage does not measure those guarantees.
 
 ## Commands
 
@@ -17,7 +17,7 @@ mise run test:browser
 
 `mise run coverage` collects the same coverage without enforcing the floor; `mise run coverage:html` regenerates HTML from the last successful collection.
 
-Reports are written to `target/coverage/summary.txt`, `target/coverage/coverage.json` and `target/coverage/html/index.html`. The dedicated CI coverage job keeps them for 14 days, including reports from runs that fail the coverage threshold. Browser and ordinary build checks remain separate jobs/steps. Configure `coverage` as a required branch-protection check once the repository has a remote.
+Reports are written to `target/coverage/summary.txt`, `target/coverage/coverage.json` and `target/coverage/html/index.html`. The dedicated CI coverage job keeps them for 14 days, including reports from runs that fail the coverage threshold. Browser and ordinary build checks remain separate jobs/steps. Configure `coverage` as a required branch-protection check in the repository settings.
 
 ## What is measured
 
@@ -55,6 +55,12 @@ Query-count regressions use SeaORM's metric callback on real SQLite and PostgreS
 Form/list regression tests also cover fieldset ordering, explicit choices taking precedence over autocomplete, stored read-only values after failed submissions, submitted values/errors and bounded pagination at `u64::MAX`. The cleanup reduced `build_fields` cognitive complexity from 55 to 15. Advisory Clippy now reports only two test-code length warnings, with none in production code.
 
 CSV request tests cover quotes, commas, mixed newlines, Unicode, empty cells/results and unchanged formula-like text. Email unit tests cover optional blanks, malformed addresses, display-name rejection, Unicode, quoted local parts and local/domain-label byte limits. The language review passed the Rust/PostgreSQL, strict Clippy, rustdoc, package and coverage checks. All nine browser scenarios also pass with the updated interface text.
+
+## ReefAdmin release candidate
+
+The rename and public-error review passed 81 Rust tests (22 unit, 52 SQLite request and seven PostgreSQL tests), all nine Chromium scenarios, strict Clippy, rustdoc and package verification. Production line coverage is **94.80%** (3,100 of 3,270 lines). The added request test verifies generic HTTP 500 responses for template and database read failures in full-page and HTMX requests. Existing write tests also check that internal observer and database messages stay private while transactions roll back.
+
+A separate consumer crate compiles against the extracted `reefadmin` package using the `loco-admin` dependency alias and an explicit access policy. This checks package and import compatibility; it does not replace testing an existing host application's session, CSRF and domain integration.
 
 ## Mutation checks
 

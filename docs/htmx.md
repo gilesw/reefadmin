@@ -11,13 +11,13 @@ Mount every admin route behind the host's session, staff and CSRF middleware, in
 Configure an access policy and supply a trusted `AdminActor` as described in [permissions](permissions.md). After resolving the session, insert the host-issued token into each request before passing it to the admin:
 
 ```rust,ignore
-request.extensions_mut().insert(loco_admin::CsrfToken {
+request.extensions_mut().insert(reefadmin::CsrfToken {
     field_name: "_csrf".into(),
     value: session_csrf_token,
 });
 ```
 
-Use the field name expected by the host's CSRF validator, avoiding entity fields and admin parameters. Loco Admin includes the token in ordinary write forms and HTMX toggle requests. It does not generate tokens, validate them or install session middleware. Missing extensions render no token; the host must reject writes when its required token is missing or invalid.
+Use the field name expected by the host's CSRF validator, avoiding entity fields and admin parameters. ReefAdmin includes the token in ordinary write forms and HTMX toggle requests. It does not generate tokens, validate them or install session middleware. Missing extensions render no token; the host must reject writes when its required token is missing or invalid.
 
 The same request-extension contract works with Axum middleware and a Loco initializer. Middleware must wrap the admin router and run after session resolution. Keep tokens per request, never in `AdminApp` configuration. Templates that replace forms must retain the `csrf.html` include.
 

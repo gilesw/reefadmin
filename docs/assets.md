@@ -1,6 +1,6 @@
 # Assets and theme
 
-Loco Admin embeds Bootstrap 5.3.8, its JavaScript bundle (including Popper 2.11.8), HTMX 2.0.11, and a small admin stylesheet/script. Assets are served under the configured prefix at `/_static/`. Applications can serve these assets without Node or a content delivery network (CDN).
+ReefAdmin embeds Bootstrap 5.3.8, its JavaScript bundle (including Popper 2.11.8), HTMX 2.0.11, and a small admin stylesheet/script. Assets are served under the configured prefix at `/_static/`. Applications can serve these assets without Node or a content delivery network (CDN).
 
 Vendor URLs include versions and use immutable caching. `admin.css` and `admin.js` are revalidated. Unknown asset paths return 404.
 

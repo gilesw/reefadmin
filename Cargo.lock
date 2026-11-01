@@ -1351,28 +1351,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "loco-admin"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "chrono",
- "csv",
- "email_address",
- "form_urlencoded",
- "http-body-util",
- "percent-encoding",
- "regex",
- "sea-orm",
- "serde",
- "serde_json",
- "tera",
- "thiserror",
- "tokio",
- "tower",
-]
-
-[[package]]
 name = "log"
 version = "0.4.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1768,6 +1746,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "reefadmin"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "chrono",
+ "csv",
+ "email_address",
+ "form_urlencoded",
+ "http-body-util",
+ "percent-encoding",
+ "regex",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "tera",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
 ]
 
 [[package]]

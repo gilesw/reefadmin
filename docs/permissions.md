@@ -1,6 +1,6 @@
 # Permissions
 
-The host authenticates users and resolves their current permissions. Loco Admin enforces those decisions through an `AccessPolicy` and a trusted `AdminActor` request extension. It has no user table, password store or login page.
+The host authenticates users and resolves their current permissions. ReefAdmin enforces those decisions through an `AccessPolicy` and a trusted `AdminActor` request extension. It has no user table, password store or login page.
 
 ## Mounting
 
@@ -15,7 +15,7 @@ Every admin handler, including assets, requires a nonempty actor ID and `can_ent
 Every default method on `AccessPolicy` denies access. Its `scope` method returns `None` to deny an operation on an entity. To allow the operation, return a SeaORM `Condition` that selects the permitted rows. `Some(Condition::all())` explicitly permits every row. Use registered entity names to distinguish multiple registrations of the same table; qualify SQL columns when necessary.
 
 ```rust
-use loco_admin::{AccessEntity, AccessPolicy, AdminActor, Operation, Row};
+use reefadmin::{AccessEntity, AccessPolicy, AdminActor, Operation, Row};
 use sea_orm::{Condition, sea_query::{Alias, Expr, ExprTrait}};
 
 struct OwnedPosts;
@@ -42,7 +42,7 @@ impl AccessPolicy for OwnedPosts {
 }
 ```
 
-A row scope is a SQL condition that selects records the actor can access. Loco Admin applies it before counting, paginating or returning records. Every operation must satisfy both its own scope and the `View` scope. `Toggle(field)` must also satisfy the `Update` scope.
+A row scope is a SQL condition that selects records the actor can access. ReefAdmin applies it before counting, paginating or returning records. Every operation must satisfy both its own scope and the `View` scope. `Toggle(field)` must also satisfy the `Update` scope.
 
 Creating a row therefore also requires view permission. Named custom actions use `Action(name)`. CSV and autocomplete have separate `Export` and `Autocomplete` permissions. Global `can_add`, `can_edit`, `can_delete`, export and bulk-delete settings can further restrict access.
 
@@ -76,7 +76,7 @@ Custom actions receive `ActionContext.actor`, the database connection and author
 
 ## Application code remains trusted
 
-Custom SQL search/computed expressions, computed callbacks, actions, model hooks and observers can execute application SQL. Loco Admin does not rewrite or sandbox that code. Scope related queries yourself: an application-supplied aggregate or search expression could otherwise disclose information from hidden rows. Use the supplied transaction for observer database writes. Handle external effects after commit or through an outbox, as described in [persistence](architecture.md#persistence).
+Custom SQL search/computed expressions, computed callbacks, actions, model hooks and observers can execute application SQL. ReefAdmin does not rewrite or sandbox that code. Scope related queries yourself: an application-supplied aggregate or search expression could otherwise disclose information from hidden rows. Use the supplied transaction for observer database writes. Handle external effects after commit or through an outbox, as described in [persistence](architecture.md#persistence).
 
 Policies are synchronous. Resolve database-backed grants in middleware once per request and carry them in actor claims. Your application decides when to refresh claims and how to revoke permissions. SQL row scopes are evaluated against current database state, while the actor's claims remain a snapshot for that request.
 

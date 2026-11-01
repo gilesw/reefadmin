@@ -1,10 +1,10 @@
 # Templates
 
-Loco Admin uses Tera 2. Templates are embedded, and `AdminApp::template(name, source)` replaces a named template or adds one. The engine resolves all overrides before it validates them. You can therefore register child and parent templates in either order. If you override the same name more than once, the engine uses the last override.
+ReefAdmin uses Tera 2. Templates are embedded, and `AdminApp::template(name, source)` replaces a named template or adds one. The engine resolves all overrides before it validates them. You can therefore register child and parent templates in either order. If you override the same name more than once, the engine uses the last override.
 
 Replacement layouts must retain the `title`, `content` and `notices` blocks used by built-in child templates. The default layout also provides `styles` and `scripts` blocks. Lists use `list_results.html`, `pagination.html`, `row.html` and `notices.html`; relationship options use `relationship_options.html`.
 
-Use `configure_templates(|tera| { ... })` to register filters, functions or tests before loading templates. This configures Loco Admin's engine; it does not automatically import the host application's templates or filters. Loco Admin does not depend on Loco.
+Use `configure_templates(|tera| { ... })` to register filters, functions or tests before loading templates. This configures ReefAdmin's engine; it does not automatically import the host application's templates or filters. ReefAdmin does not depend on Loco.
 
 ## Moving from MiniJinja
 

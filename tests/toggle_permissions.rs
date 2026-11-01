@@ -6,7 +6,7 @@ use axum::{
     http::{Request, StatusCode},
 };
 use common::{Reply, send_raw};
-use loco_admin::{AccessEntity, AccessPolicy, AdminActor, AdminApp, EntityAdmin, Operation, Row};
+use reefadmin::{AccessEntity, AccessPolicy, AdminActor, AdminApp, EntityAdmin, Operation, Row};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, Database, DatabaseConnection,
     EntityTrait, Schema, Set,

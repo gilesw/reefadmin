@@ -5,7 +5,7 @@ use super::{
     list::{find, id_of},
 };
 use crate::{
-    AdminError, Operation,
+    Operation,
     backend::{ColKind, ColumnMeta},
     entity::{EntityAdmin, Row},
     sql::{self, ListSpec},
@@ -630,20 +630,7 @@ pub(super) async fn add_submit(
                 "added",
             ))
         }
-        Err(AdminError::AccessDenied) => Err(Failure::Forbidden("Access denied.")),
-        Err(err) => {
-            let errors = HashMap::from([("__all__".to_string(), err.to_string())]);
-            render_form(
-                &state,
-                entity,
-                Mode::Add,
-                &form,
-                &errors,
-                None,
-                StatusCode::UNPROCESSABLE_ENTITY,
-            )
-            .await
-        }
+        Err(err) => Err(err.into()),
     }
 }
 
@@ -724,20 +711,7 @@ pub(super) async fn change_submit(
             )
             .await
         {
-            if matches!(err, AdminError::AccessDenied) {
-                return Err(Failure::Forbidden("Access denied."));
-            }
-            let errors = HashMap::from([("__all__".to_string(), err.to_string())]);
-            return render_form(
-                &state,
-                entity,
-                mode,
-                &form,
-                &errors,
-                None,
-                StatusCode::UNPROCESSABLE_ENTITY,
-            )
-            .await;
+            return Err(err.into());
         }
     }
     Ok(submit_redirect(&state, entity, &form, Some(&id), "changed"))

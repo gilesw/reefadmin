@@ -3,7 +3,7 @@ mod common;
 
 use axum::{Router, http::StatusCode};
 use common::{get, post};
-use loco_admin::{AdminApp, EntityAdmin, MutationObserver};
+use reefadmin::{AdminApp, EntityAdmin, MutationObserver};
 use sea_orm::{
     ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DatabaseTransaction, DbErr,
     EntityTrait, Schema,
@@ -265,10 +265,10 @@ async fn string_keys_and_database_constraint_failures_preserve_data() {
             StatusCode::SEE_OTHER
         );
         let before = item::Entity::find().all(&db).await.unwrap();
-        assert_eq!(
-            post(&app, "/admin/items/add", INSERT).await.status,
-            StatusCode::UNPROCESSABLE_ENTITY
-        );
+        let failed = post(&app, "/admin/items/add", INSERT).await;
+        assert_eq!(failed.status, StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(failed.body.contains("contact your administrator"));
+        assert!(!failed.body.contains("duplicate key"));
         assert_eq!(item::Entity::find().all(&db).await.unwrap(), before);
         assert_eq!(
             post(&app, "/admin/exchanges/XTEST/delete", "").await.status,
@@ -308,12 +308,12 @@ async fn observer_failures_roll_back_each_write_and_derived_changes() {
             (
                 "/admin/items/add",
                 "name=Rejected&tags=%5B%5D&small=7&rating=1.5",
-                StatusCode::UNPROCESSABLE_ENTITY,
+                StatusCode::INTERNAL_SERVER_ERROR,
             ),
             (
                 "/admin/items/1/change",
                 "name=Rejected&tags=%5B%5D&small=7&rating=1.5",
-                StatusCode::UNPROCESSABLE_ENTITY,
+                StatusCode::INTERNAL_SERVER_ERROR,
             ),
             (
                 "/admin/items/1/delete",
@@ -331,11 +331,10 @@ async fn observer_failures_roll_back_each_write_and_derived_changes() {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ),
         ] {
-            assert_eq!(
-                post(&rejecting, path, body).await.status,
-                expected,
-                "{path}"
-            );
+            let response = post(&rejecting, path, body).await;
+            assert_eq!(response.status, expected, "{path}");
+            assert!(!response.body.contains("reject derived update"));
+            assert!(response.body.contains("contact your administrator"));
             assert_eq!(item::Entity::find().all(&db).await.unwrap(), before);
         }
     })
@@ -345,7 +344,7 @@ async fn observer_failures_roll_back_each_write_and_derived_changes() {
 #[tokio::test]
 #[ignore = "requires disposable PostgreSQL database"]
 async fn policy_scopes_recheck_saved_rows_and_roll_back_writes() {
-    use loco_admin::{AccessEntity, AccessPolicy, AdminActor, Operation, Row};
+    use reefadmin::{AccessEntity, AccessPolicy, AdminActor, Operation, Row};
     use sea_orm::{ColumnTrait, Condition};
     struct ActiveOnly;
     impl AccessPolicy for ActiveOnly {

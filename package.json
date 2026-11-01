@@ -1,5 +1,5 @@
 {
-  "name": "loco-admin-browser-tests",
+  "name": "reefadmin-browser-tests",
   "private": true,
   "scripts": { "test": "playwright test" },
   "devDependencies": { "@playwright/test": "1.64.1" }

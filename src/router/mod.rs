@@ -210,7 +210,14 @@ impl IntoResponse for Failure {
             Self::NotFound => (StatusCode::NOT_FOUND, "Not found.".to_string()),
             Self::Forbidden(message) => (StatusCode::FORBIDDEN, message.to_string()),
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
-            Self::Internal(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            Self::Internal(err) => {
+                tracing::error!(error = ?err, "Admin request failed");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "The request could not be completed. Try again or contact your administrator."
+                        .to_owned(),
+                )
+            }
         };
         (status, [(header::CACHE_CONTROL, "no-store")], message).into_response()
     }

@@ -1,4 +1,4 @@
-//! A server-rendered admin for Loco applications, built on SeaORM and Axum.
+//! A server-rendered admin for Axum and SeaORM, with Loco integration.
 //!
 //! Mount the router behind your application’s session and CSRF middleware.
 //! Supply a trusted [`AdminActor`] and an [`AccessPolicy`] for permission checks.

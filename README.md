@@ -1,6 +1,6 @@
-# Loco Admin
+# ReefAdmin
 
-A Django-inspired admin for Loco, built on Axum and SeaORM.
+A Django-inspired admin for Axum and SeaORM, with Loco integration.
 
 Register your entities to get server-rendered forms, searchable lists and bulk actions, using your application's existing accounts and permissions.
 
@@ -22,17 +22,17 @@ Tested with PostgreSQL and SQLite. Uploads, editable inlines and many-to-many co
 
 Before you start, supply your application’s database connection, entity models, access policy, and session and CSRF middleware. The example below uses placeholders for these application components.
 
-Add a local dependency. This path assumes both repositories are in the same parent directory:
+Until the first crates.io release, use a local checkout. Replace the path with its location:
 
 ```toml
 [dependencies]
-loco-admin = { path = "../loco-admin" }
+reefadmin = { path = "/path/to/checkout" }
 ```
 
 Register an entity and mount the admin:
 
 ```rust,ignore
-use loco_admin::{AdminApp, EntityAdmin};
+use reefadmin::{AdminApp, EntityAdmin};
 
 let admin = AdminApp::new(db.clone())
     .access_policy(MyPolicy)
@@ -58,7 +58,7 @@ let router = router.nest("/admin", protected);
 
 `posts`, `MyPolicy`, `require_staff` and `require_csrf` are supplied by your application. The staff middleware must insert a trusted `AdminActor` request extension. Run session middleware before the staff check, and use the same mount prefix as `AdminApp`. In Loco, mount the router in an initializer using `ctx.db`.
 
-Your application owns accounts, policy decisions and CSRF protection. Loco Admin requires a policy and enforces it for each operation and database row. See [permissions](docs/permissions.md) for the policy interface and an example.
+Your application owns accounts, policy decisions and CSRF protection. ReefAdmin requires a policy and enforces it for each operation and database row. See [permissions](docs/permissions.md) for the policy interface and an example.
 
 Use these settings to limit the available operations and fields:
 
@@ -75,6 +75,21 @@ Bootstrap and HTMX are bundled. Use `.extra_stylesheet(...)` and `.extra_script(
 Register a `MutationObserver` with `.observe_mutations(observer)` to update derived data in the same transaction as an admin write. Use the supplied transaction; an error rolls back both changes.
 
 Custom actions manage their own transactions and do not automatically invoke observers. Bulk deletion commits each row separately. See [architecture](docs/architecture.md) for callback details and side-effect handling.
+
+## Migration from loco-admin
+
+The package and Rust import name are now `reefadmin`. Update the dependency and change `use loco_admin::...` to `use reefadmin::...`. To keep existing imports, use a Cargo dependency alias:
+
+```toml
+[dependencies]
+loco-admin = { package = "reefadmin", path = "/path/to/checkout" }
+```
+
+The `LOCO_ADMIN_TEST_DATABASE_URL` setting and `X-Loco-Admin-Fragment` response header retain their existing names for compatibility. The repository URL is unchanged.
+
+Internal failures now return a generic HTTP 500 response and emit a `tracing` error event. Configure a subscriber in the host to collect diagnostics. Form validation still returns HTTP 422 with field errors. Custom actions should return `Ok(ActionResult::error(message))` for messages intended for users; returned `Err(...)` values are internal failures.
+
+During 0.1.x, patch releases preserve the public Rust API. Breaking changes use a new 0.x minor version and include migration notes. Security fixes may change unsafe response behaviour.
 
 ## Development
 
@@ -103,9 +118,9 @@ Use `mise tasks ls` for individual checks. Optional complexity reports are avail
 
 ## Origins and upstream contributions
 
-Adapted from [axum-admin](https://github.com/rinnguyen711/axum-admin). Loco Admin keeps its entity-registration design and bulk-action model, with revised routing, forms and SeaORM integration.
+Adapted from [axum-admin](https://github.com/rinnguyen711/axum-admin). ReefAdmin keeps its entity-registration design and bulk-action model, with revised routing, forms and SeaORM integration.
 
-Upstream provides built-in authentication, Casbin permissions and an ORM-agnostic adapter. Loco Admin focuses on SeaORM and uses the host application's authentication and permissions. These design differences make a wholesale merge a larger discussion, but focused fixes may still be useful upstream.
+Upstream provides built-in authentication, Casbin permissions and an ORM-agnostic adapter. ReefAdmin focuses on SeaORM and uses the host application's authentication and permissions. These design differences make a wholesale merge a larger discussion, but focused fixes may still be useful upstream.
 
 Foreign-key selection, PostgreSQL bindings and transaction handling are potential contributions. Reproduce each issue on current upstream before proposing a fix. The original revision and implementation details are recorded in [architecture](docs/architecture.md).
 

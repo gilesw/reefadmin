@@ -10,7 +10,7 @@ use axum::{
     http::{Request, StatusCode},
 };
 use common::{Reply, account, database, rule, send_raw};
-use loco_admin::{AccessEntity, AccessPolicy, AdminActor, AdminApp, Operation, Row};
+use reefadmin::{AccessEntity, AccessPolicy, AdminActor, AdminApp, Operation, Row};
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter};
 use serde_json::json;
 
@@ -281,7 +281,7 @@ async fn readonly_and_per_record_update_permissions_control_forms_and_toggles() 
     // Register a toggle to exercise the intersection of Toggle and Update scopes.
     let router = AdminApp::new(db.clone())
         .access_policy(OwnerPolicy)
-        .register(loco_admin::EntityAdmin::from_entity::<rule::Entity>("rules").toggles(["active"]))
+        .register(reefadmin::EntityAdmin::from_entity::<rule::Entity>("rules").toggles(["active"]))
         .into_router()
         .unwrap();
     assert_eq!(
@@ -342,7 +342,7 @@ async fn proposed_ownership_changes_and_new_rows_are_checked() {
 #[derive(Clone)]
 struct CountingObserver(Arc<AtomicUsize>);
 #[async_trait::async_trait]
-impl loco_admin::MutationObserver for CountingObserver {
+impl reefadmin::MutationObserver for CountingObserver {
     async fn before(
         &self,
         _: &sea_orm::DatabaseTransaction,

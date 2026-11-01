@@ -1,4 +1,4 @@
-# Loco Admin roadmap
+# ReefAdmin roadmap
 
 Updated 1 November 2026.
 
@@ -6,7 +6,7 @@ Build a reusable admin for Loco applications, using SeaORM and mounting as an Ax
 
 ## Scope and boundaries
 
-Loco Admin owns entity registration, admin pages, field rendering, validation, search/filter/sort/pagination, relationship controls, action dispatch and extension interfaces. The host application owns users, sessions, domain rules, storage configuration and permission decisions. Administration must integrate with existing authentication rather than create a second account system.
+ReefAdmin owns entity registration, admin pages, field rendering, validation, search/filter/sort/pagination, relationship controls, action dispatch and extension interfaces. The host application owns users, sessions, domain rules, storage configuration and permission decisions. Administration must integrate with existing authentication rather than create a second account system.
 
 Keep one crate supporting Axum 0.8 and SeaORM 2. The internal renderer uses Tera 2, with Bootstrap styling and HTMX for partial page updates. Hosts can use another template engine. Loco is an integration target, not a core dependency. Other ORMs, HTTP frameworks, a separate SPA and a standalone hosted service are outside the initial scope.
 
@@ -44,9 +44,11 @@ Regression tests cover CSV commas, quotes, CR/LF, Unicode, empty cells/results, 
 
 Investigate SeaORM's column-setting APIs as a replacement for fabricated JSON placeholder values followed by unsetting fields. Prototype against renamed serde fields, dates, enums, arrays, defaults and model hooks on SQLite/PostgreSQL. Replace the workaround only if those behaviours remain correct; do not build a second ORM.
 
-### Slice 6 — separate public errors from diagnostics
+### Slice 6 — separate public errors from diagnostics — implemented
 
-Log unexpected internal failures and return a generic 500 response. Keep useful field-validation errors, but review database/observer error paths for accidental detail disclosure. Test full-page and HTMX failures and transaction rollback.
+Unexpected request failures emit a `tracing` error event and return a generic HTTP 500 response. Database, template, observer and custom-action errors no longer appear in response bodies. Hosts configure their own tracing subscriber. Field validation keeps HTTP 422 and submitted values; explicit `ActionResult::Error` messages remain visible. An `AdminError::AccessDenied` still returns HTTP 403.
+
+Regression checks cover full pages and HTMX fragments, read/template failures, database constraints, custom actions and observer rollback. See the README for the response-behaviour migration.
 
 ### Slice 7 — review documentation and interface language — implemented
 
@@ -70,7 +72,7 @@ References: [Google style highlights](https://developers.google.com/style/highli
 
 Verification: 80 Rust tests and nine browser scenarios pass. Strict Clippy, rustdoc, package verification and the 80% coverage gate pass; measured line coverage is 94.71%. The permissions example compiles separately. Integration snippets that require host models and middleware remain explicitly marked as examples, not standalone programs.
 
-Remaining work: slice 6 still needs to separate internal diagnostics from public errors. New or changed text must follow the review guidance in AGENTS.md. No style-lint dependency was added.
+Slice 6 subsequently separated internal diagnostics from public errors. New or changed text must follow the review guidance in AGENTS.md. No style-lint dependency was added.
 
 ## Completed foundation
 
@@ -158,14 +160,14 @@ Later, consider enhanced create/edit forms, modal workflows and richer widgets. 
 
 ## Test quality and coverage
 
-T1–T5 are implemented: production line coverage is 93.67%, with 19 unit tests, 42 SQLite request tests, five PostgreSQL scenarios and nine Chromium scenarios. See [testing](docs/testing.md) for evidence and commands. The scoped mutation review now catches all 21 mutations, up from ten. The target is a dependable regression suite and an 80% production Rust line-coverage floor. This is Loco Admin's policy, not an official Rust standard.
+T1–T5 are implemented: production line coverage is 93.67%, with 19 unit tests, 42 SQLite request tests, five PostgreSQL scenarios and nine Chromium scenarios. See [testing](docs/testing.md) for evidence and commands. The scoped mutation review now catches all 21 mutations, up from ten. The target is a dependable regression suite and an 80% production Rust line-coverage floor. This is ReefAdmin's policy, not an official Rust standard.
 
 ### T1. Measure a reproducible baseline — implemented
 
 - Pin `cargo-llvm-cov` through mise and add `llvm-tools-preview` to the existing Rust toolchain configuration. Keep Rust versions aligned. Retain `cargo test`; Nextest is not required for coverage.
 - Add a coverage runner shared by local tasks and CI. Clean old profiles once, run unit/SQLite tests, then explicitly run the ignored PostgreSQL test under the same instrumentation before generating the combined report.
 - Select the PostgreSQL test target by name. Do not run all ignored tests: the ignored browser server is a long-running fixture, not a coverage test.
-- Measure Loco Admin's production Rust sources. Exclude test fixtures, test-only code, dependencies, generated output and vendored assets from the denominator. Inspect the report for inline unit-test code; if it is counted, separate test modules into test-only files rather than excluding their production modules.
+- Measure ReefAdmin's production Rust sources. Exclude test fixtures, test-only code, dependencies, generated output and vendored assets from the denominator. Inspect the report for inline unit-test code; if it is counted, separate test modules into test-only files rather than excluding their production modules.
 - Generate summary, HTML and machine-readable reports under `target/`. Record the overall baseline, per-file results, missing paths, tool versions and runtime in `docs/testing.md`.
 
 Done when a clean run includes both databases and produces an auditable report. Missing PostgreSQL configuration or failed tests must fail the combined run. No threshold is enabled until the baseline is known.
@@ -197,7 +199,7 @@ Tasks:
 | `coverage:check` | The same run and reports, failing below 80% line coverage |
 | `coverage:html` | Render the last collected coverage data as HTML without rerunning tests |
 
-- Enforce `--fail-under-lines 80` against the combined production report. Use one definition of the source scope and threshold. Loco Admin is one crate; no sharding or per-crate aggregation is needed.
+- Enforce `--fail-under-lines 80` against the combined production report. Use one definition of the source scope and threshold. ReefAdmin is one crate; no sharding or per-crate aggregation is needed.
 - Add a dedicated coverage CI job with the pinned toolchain and PostgreSQL service. Keep existing Clippy, package and browser checks. Measure added runtime before considering replacing duplicate test executions.
 - Retain HTML and machine-readable reports as CI artifacts, including below-threshold reports. Test failures must remain failures even when a report is produced. No external coverage service is required.
 - Verify the gate with a temporary threshold above the measured result, then restore 80%. Verify that stale profiles, unavailable PostgreSQL and test failures cannot produce a successful check.
@@ -263,6 +265,16 @@ Provide plain Axum and Loco examples demonstrating a protected mount, existing a
 Retain bundled default assets, configurable templates and branding. Include keyboard-accessible forms, clear errors, mobile layouts and empty states.
 
 Document model persistence hooks, mutation observers and custom operations separately. State composite-key, backend, relationship and upload limitations explicitly. Validate configuration early with actionable errors.
+
+## ReefAdmin release preparation
+
+The crate and Rust import name are `reefadmin`. Cargo dependency aliases support consumers that keep `loco_admin` imports. The test database environment variable and fragment response header retain their previous names. Repository metadata points to the existing GitHub repository.
+
+The initial 0.1 release covers the implemented CRUD and policy contracts. Domain-operation adapters, audit hooks, rich editing and the optional partial-model simplification remain follow-up work. Hosts that require these features should retain application-owned routes and operations.
+
+Verification: 81 Rust tests, nine browser scenarios and 94.80% production line coverage pass. Strict Clippy, rustdoc, package verification and a separate consumer build using the compatibility alias pass.
+
+Before publishing, confirm crates.io name availability and credentials, commit the release candidate, verify existing application integrations and configure the release workflow. Publishing remains a separate explicit action.
 
 ## Public release gates
 

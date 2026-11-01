@@ -10,7 +10,9 @@
 
 - Require explicit `.export_fields(...)` for CSV export; validate field names and select only configured columns. Existing registrations default to no export.
 
-- Rename the package to `loco-admin` (Rust imports: `loco_admin`) and target Loco applications. Rename the test database setting to `LOCO_ADMIN_TEST_DATABASE_URL` and the fragment header to `X-Loco-Admin-Fragment`.
+- Rename the package and Rust imports to `reefadmin`. Existing consumers can keep `loco_admin` imports with a Cargo dependency alias. Preserve `LOCO_ADMIN_TEST_DATABASE_URL` and `X-Loco-Admin-Fragment` for compatibility.
+
+- Log internal request failures through `tracing` and return a generic HTTP 500 response. Keep field-validation errors and explicit `ActionResult::Error` messages visible to users. See the README migration notes.
 
 - Require host-supplied actor context and an explicit policy; enforce operation and database row scopes across reads and writes.
 - Reject mixed unauthorized bulk selections before execution and pass the actor to custom actions. See [migration](docs/permissions.md#migration).
@@ -25,7 +27,7 @@
 
 - Replace MiniJinja with Tera 2, port template macros to components and add `configure_templates` for application filters/functions. Existing template overrides need Tera syntax.
 
-- Introduce Loco Admin, a standalone SeaORM/Axum admin adapted from axum-admin.
+- Introduce ReefAdmin, a standalone SeaORM/Axum admin adapted from axum-admin.
 - Reconcile transaction-backed mutation observers, PostgreSQL arrays and typed numeric comparisons, foreign-key selection outside the first page, and optional favicon configuration.
 - Add standalone build/package checks and a PostgreSQL regression test.
 - Add pinned mise tasks shared with CI, Clippy hygiene and advisory complexity checks, dependency/workflow linting, rustdoc checks and an explicit package-content allowlist.

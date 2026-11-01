@@ -9,7 +9,7 @@ use axum::{
     response::Response,
 };
 use http_body_util::BodyExt;
-use loco_admin::{Action, ActionResult, AdminApp, EntityAdmin, Inline, MaxLength};
+use reefadmin::{Action, ActionResult, AdminApp, EntityAdmin, Inline, MaxLength};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectOptions, ConnectionTrait, Database, DatabaseConnection,
     EntityTrait, PaginatorTrait, QueryFilter, Schema, Set, sea_query::Expr,
@@ -342,7 +342,7 @@ impl Reply {
 pub async fn send(app: &Router, mut request: Request<Body>) -> Reply {
     request
         .extensions_mut()
-        .insert(loco_admin::AdminActor::new("test"));
+        .insert(reefadmin::AdminActor::new("test"));
     send_raw(app, request).await
 }
 
@@ -420,37 +420,37 @@ pub async fn protect(mut request: AxumRequest, next: Next) -> Response {
         }
         request = Request::from_parts(parts, Body::from(bytes));
     }
-    request.extensions_mut().insert(loco_admin::CsrfToken {
+    request.extensions_mut().insert(reefadmin::CsrfToken {
         field_name: "_csrf".into(),
         value: token.into(),
     });
     request
         .extensions_mut()
-        .insert(loco_admin::AdminActor::new(token));
+        .insert(reefadmin::AdminActor::new(token));
     next.run(request).await
 }
 
 /// Deliberately permissive fixture policy; never installed by the library.
 pub struct TestPolicy;
-impl loco_admin::AccessPolicy for TestPolicy {
-    fn can_enter(&self, _: &loco_admin::AdminActor) -> bool {
+impl reefadmin::AccessPolicy for TestPolicy {
+    fn can_enter(&self, _: &reefadmin::AdminActor) -> bool {
         true
     }
     fn scope(
         &self,
-        _: &loco_admin::AdminActor,
-        _: loco_admin::AccessEntity<'_>,
-        _: &loco_admin::Operation,
+        _: &reefadmin::AdminActor,
+        _: reefadmin::AccessEntity<'_>,
+        _: &reefadmin::Operation,
     ) -> Option<sea_orm::Condition> {
         Some(sea_orm::Condition::all())
     }
     fn can_write(
         &self,
-        _: &loco_admin::AdminActor,
-        _: loco_admin::AccessEntity<'_>,
-        _: &loco_admin::Operation,
-        _: Option<&loco_admin::Row>,
-        _: &loco_admin::Row,
+        _: &reefadmin::AdminActor,
+        _: reefadmin::AccessEntity<'_>,
+        _: &reefadmin::Operation,
+        _: Option<&reefadmin::Row>,
+        _: &reefadmin::Row,
     ) -> bool {
         true
     }

@@ -32,6 +32,7 @@ impl ActionContext {
 /// The outcome of a custom action, shown on the list page.
 pub enum ActionResult {
     Success(String),
+    /// A message intended for users. Unexpected failures should return `Err(AdminError)` instead.
     Error(String),
     /// Redirects to a path inside the admin, relative to its prefix (for example `/rules`).
     Redirect(String),

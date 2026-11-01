@@ -2,7 +2,7 @@ mod common;
 
 use axum::{Router, http::StatusCode};
 use common::{account, admin, app, database, exchange, get, links, post, rule};
-use loco_admin::{AdminApp, AdminError, EntityAdmin};
+use reefadmin::{AdminApp, AdminError, EntityAdmin};
 use sea_orm::{EntityTrait, PaginatorTrait};
 
 #[tokio::test]
@@ -622,7 +622,7 @@ async fn observer_failure_rolls_back_mutations_and_observer_writes() {
     use serde_json::Value;
     struct Reject;
     #[async_trait::async_trait]
-    impl loco_admin::MutationObserver for Reject {
+    impl reefadmin::MutationObserver for Reject {
         async fn before(
             &self,
             _db: &DatabaseTransaction,
@@ -667,7 +667,10 @@ async fn observer_failure_rolls_back_mutations_and_observer_writes() {
         ),
         ("/admin/exchanges/XAMS/delete", ""),
     ] {
-        post(&app, path, body).await;
+        let response = post(&app, path, body).await;
+        assert_eq!(response.status, StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(!response.body.contains("Derived update failed"));
+        assert!(response.body.contains("contact your administrator"));
         assert_eq!(
             exchange::Entity::find().all(&db).await.unwrap(),
             before,
@@ -1013,7 +1016,7 @@ async fn enhanced_writes_use_host_sessions_csrf_and_permissions() {
 #[tokio::test]
 async fn enhanced_toggle_rolls_back_observer_failure() {
     use axum::{body::Body, http::Request};
-    use loco_admin::MutationObserver;
+    use reefadmin::MutationObserver;
     use sea_orm::{ConnectionTrait, DatabaseTransaction, DbErr};
     use serde_json::Value;
     struct Reject;
@@ -1060,6 +1063,8 @@ async fn enhanced_toggle_rolls_back_observer_failure() {
     let response = common::send(&app, request).await;
     assert_eq!(response.status, StatusCode::INTERNAL_SERVER_ERROR);
     assert!(!response.headers.contains_key("x-loco-admin-fragment"));
+    assert!(!response.body.contains("Rejected by application"));
+    assert!(response.body.contains("contact your administrator"));
     assert_eq!(
         account::Entity::find_by_id(1)
             .one(&db)
@@ -1168,7 +1173,7 @@ async fn direct_requests_cannot_bypass_disabled_operations_or_field_allowlists()
 
 #[tokio::test]
 async fn custom_action_errors_redirects_and_invalid_ids_are_handled() {
-    use loco_admin::{Action, ActionResult};
+    use reefadmin::{Action, ActionResult};
     let db = database().await;
     let app = Router::new().nest(
         "/staff",
@@ -1195,11 +1200,7 @@ async fn custom_action_errors_redirects_and_invalid_ids_are_handled() {
             .unwrap(),
     );
     let before = account::Entity::find().all(&db).await.unwrap();
-    for (action, message) in [
-        ("error", "Not allowed &lt;script&gt;"),
-        ("failed", "Domain failure"),
-        ("typed", "Parsed"),
-    ] {
+    for (action, message) in [("error", "Not allowed &lt;script&gt;"), ("typed", "Parsed")] {
         let reply = post(
             &app,
             "/staff/accounts",
@@ -1209,6 +1210,10 @@ async fn custom_action_errors_redirects_and_invalid_ids_are_handled() {
         assert_eq!(reply.status, StatusCode::OK);
         assert!(reply.body.contains(message), "{}", reply.body);
     }
+    let failed = post(&app, "/staff/accounts", "action=failed&selected=1").await;
+    assert_eq!(failed.status, StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(!failed.body.contains("Domain failure"));
+    assert!(failed.body.contains("contact your administrator"));
     let redirect = post(&app, "/staff/accounts", "action=redirect&selected=1").await;
     assert_eq!(redirect.status, StatusCode::SEE_OTHER);
     assert_eq!(redirect.location(), "/staff/accounts");
@@ -1223,7 +1228,7 @@ async fn custom_action_errors_redirects_and_invalid_ids_are_handled() {
 
 #[tokio::test]
 async fn bulk_delete_deduplicates_ids_and_preserves_prior_commits_on_failure() {
-    use loco_admin::MutationObserver;
+    use reefadmin::MutationObserver;
     use sea_orm::{DatabaseTransaction, DbErr};
     use serde_json::Value;
     struct RejectSecond;
@@ -1545,4 +1550,38 @@ async fn csv_preserves_special_characters_empty_cells_and_record_boundaries() {
     let empty = post(&app, "/admin/accounts", "action=__csv__&q=q%3Dmissing-row").await;
     assert_eq!(empty.status, StatusCode::OK);
     assert_eq!(empty.body, "username,account_type\r\n");
+}
+
+#[tokio::test]
+async fn internal_read_and_template_errors_are_private_for_pages_and_fragments() {
+    use axum::{body::Body, http::Request};
+    use sea_orm::ConnectionTrait;
+
+    let db = database().await;
+    let broken_template = Router::new().nest(
+        "/admin",
+        admin(&db, "/admin")
+            .template("list_results.html", "{{ admin_title | int }}")
+            .into_router()
+            .unwrap(),
+    );
+    let broken_database = Router::new().nest("/admin", admin(&db, "/admin").into_router().unwrap());
+    for (app, drop_table) in [(&broken_template, false), (&broken_database, true)] {
+        if drop_table {
+            db.execute_unprepared("DROP TABLE accounts").await.unwrap();
+        }
+        for enhanced in [false, true] {
+            let mut request = Request::get("/admin/accounts");
+            if enhanced {
+                request = request.header("HX-Request", "true");
+            }
+            let response = common::send(app, request.body(Body::empty()).unwrap()).await;
+            assert_eq!(response.status, StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(response.headers["cache-control"], "no-store");
+            assert_eq!(
+                response.body,
+                "The request could not be completed. Try again or contact your administrator."
+            );
+        }
+    }
 }
