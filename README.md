@@ -95,6 +95,10 @@ Custom actions return `Ok(ActionResult::error(message))` for messages intended f
 
 Fragment responses carry `X-ReefAdmin-Fragment`. See [HTMX integration](docs/htmx.md).
 
+## Updating from 0.1.0
+
+Use `X-ReefAdmin-Fragment` in custom fragment handlers and `REEFADMIN_TEST_DATABASE_URL` in test commands. Version 0.1.1 removes the legacy `X-Loco-Admin-Fragment` header and `LOCO_ADMIN_TEST_DATABASE_URL` fallback. This one-off cleanup follows the initial release, before any deployed consumers relied on those aliases.
+
 ## Versioning
 
 During 0.1.x, patch releases preserve the public Rust API. Breaking changes use a new 0.x minor version and include migration notes. Security fixes may change unsafe response behaviour.

@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2 November 2026
 
 - Add `ValidationErrorMapper` and `AdminApp::map_write_errors` so hosts can show selected add and change write errors, including observer errors, as HTTP 422 form messages. Unmapped errors remain generic HTTP 500 responses.
+- Remove the legacy `X-Loco-Admin-Fragment` header and `LOCO_ADMIN_TEST_DATABASE_URL` fallback. Use `X-ReefAdmin-Fragment` and `REEFADMIN_TEST_DATABASE_URL`. This is a one-off compatibility cleanup after the initial release; no deployed consumers rely on these aliases.
+- Simplify the README and contributor instructions. Make the extracted-package check use the current package version.
 
 ## 0.1.0 — 1 November 2026
 
@@ -20,9 +22,9 @@
 
 - Require explicit `.export_fields(...)` for CSV export; validate field names and select only configured columns. Existing registrations default to no export.
 
-- Name the package and Rust imports `reefadmin`. Use `REEFADMIN_TEST_DATABASE_URL` and `X-ReefAdmin-Fragment`. Point the repository URL and CI database names at ReefAdmin.
+- Rename the package and Rust imports to `reefadmin`. Existing consumers can keep `loco_admin` imports with a Cargo dependency alias. Use `REEFADMIN_TEST_DATABASE_URL` and `X-ReefAdmin-Fragment`; retain the previous names as compatibility aliases. Update the repository URL and CI database names to ReefAdmin.
 
-- Log internal request failures through `tracing` and return a generic HTTP 500 response. Keep field-validation errors and explicit `ActionResult::Error` messages visible to users. See the README request errors section.
+- Log internal request failures through `tracing` and return a generic HTTP 500 response. Keep field-validation errors and explicit `ActionResult::Error` messages visible to users. See the README migration notes.
 
 - Require host-supplied actor context and an explicit policy; enforce operation and database row scopes across reads and writes.
 - Reject mixed unauthorized bulk selections before execution and pass the actor to custom actions. See [migration](docs/permissions.md#migration).

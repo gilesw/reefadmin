@@ -60,9 +60,9 @@ CSV request tests cover quotes, commas, mixed newlines, Unicode, empty cells/res
 
 The rename and public-error review passed 81 Rust tests (22 unit, 52 SQLite request and seven PostgreSQL tests), all nine Chromium scenarios, strict Clippy, rustdoc and package verification. Production line coverage is **94.80%** (3,100 of 3,270 lines). The added request test verifies generic HTTP 500 responses for template and database read failures in full-page and HTMX requests. Existing write tests also check that internal observer and database messages stay private while transactions roll back.
 
-A separate consumer crate compiles against the extracted `reefadmin` package with an explicit access policy. This checks package and import compatibility; it does not replace testing an existing host application's session, CSRF and domain integration.
+For 0.1.0, a separate consumer crate compiled against the extracted `reefadmin` package using the `loco-admin` dependency alias and an explicit access policy. This checks package and import compatibility; it does not replace testing an existing host application's session, CSRF and domain integration.
 
-The subsequent naming cleanup passed the complete PostgreSQL merge gate and all nine browser scenarios. Production line coverage is **94.82%** (3,110 of 3,280 lines). Test commands use `REEFADMIN_TEST_DATABASE_URL`.
+The 0.1.0 naming cleanup passed the complete PostgreSQL merge gate and all ten browser scenarios, including canonical and legacy fragment headers. Production line coverage was **94.82%** (3,110 of 3,280 lines). Version 0.1.1 removes the legacy-header scenario and the old database-setting fallback. Test commands use `REEFADMIN_TEST_DATABASE_URL`.
 
 ## Loco integration example
 

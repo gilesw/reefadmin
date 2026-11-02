@@ -1,6 +1,6 @@
 # Releasing ReefAdmin
 
-The initial release candidate is `reefadmin` 0.1.0. The core supports Axum 0.8 and SeaORM 2, with Rust 1.98.1 as the declared minimum. The standalone Loco 1.2.0 example stays outside the published crate. Hosts own authentication, authorization and CSRF validation.
+The next release candidate is `reefadmin` 0.1.1. Version 0.1.0 is already published. The core supports Axum 0.8 and SeaORM 2, with Rust 1.98.1 as the declared minimum. The standalone Loco 1.2.0 example stays outside the published crate. Hosts own authentication, authorization and CSRF validation.
 
 ## Prepare and verify
 
@@ -15,11 +15,11 @@ The initial release candidate is `reefadmin` 0.1.0. The core supports Axum 0.8 a
 
 Publishing and pushing the release tag are separate, explicit release actions. These steps work locally without a hosted CI or release service.
 
-1. Confirm the `reefadmin` name is available on crates.io and that the publishing account has permission. A missing index entry is only an availability indication; a dry run does not establish publishing rights or reserve a name. Authenticate with `cargo login` or the configured Cargo credential provider. Never commit a token.
-2. Set the changelog's release date. Change the README dependency examples to `reefadmin = "0.1"`. Keep the Loco example's path dependency for repository development.
+1. Confirm the target version is not already published on crates.io and that the publishing account has permission. A dry run does not establish publishing rights. Authenticate with `cargo login` or the configured Cargo credential provider. Never commit a token.
+2. Set the package version in Cargo.toml and update its entry in both lockfiles. Set the changelog's release date. Change the README dependency examples to `reefadmin = "0.1"`. Keep the Loco example's path dependency for repository development.
 3. Review and commit all release files, including the example lockfile. Ensure `git status --porcelain` is empty. Run `mise run release:check` on that commit. Any subsequent source change requires the relevant checks again.
 4. Publish with `cargo publish --locked`. Do not use `--allow-dirty` or `--no-verify` for the real upload. If the command times out, check crates.io before retrying: an upload may have succeeded.
-5. Confirm version 0.1.0 is visible on crates.io and that docs.rs builds its API documentation. Tag the tested commit with `git tag -a v0.1.0 -m 'ReefAdmin 0.1.0'`, then push the release commit and tag to the established remote.
+5. Confirm version 0.1.1 is visible on crates.io and that docs.rs builds its API documentation. Tag the tested commit with `git tag -a v0.1.1 -m 'ReefAdmin 0.1.1'`, then push the release commit and tag to the established remote.
 6. Verify a consuming application resolves `reefadmin = "0.1"` from the registry. Record any release issue before starting the next version.
 
 During 0.1.x, patch releases preserve the public Rust API. Breaking changes use a new 0.x minor version with migration notes. Security fixes may change unsafe response behaviour. An uploaded version cannot be overwritten; publish a corrected patch release if needed.
